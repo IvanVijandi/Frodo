@@ -1,0 +1,4 @@
+fastapi[standard]
+langchain-ollama
+langchain_text_splitters
+langchain_community
