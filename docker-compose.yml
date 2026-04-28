@@ -1,0 +1,13 @@
+services: ##Levanta ollama en un contenedor de Docker
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: sh -c "ollama serve"
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
