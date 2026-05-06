@@ -8,5 +8,5 @@
 
 ## 2. Pruebas y Verificación
 
-- [ ] 2.1 Levantar los servicios con `docker compose up -d` o equivalente.
-- [ ] 2.2 Revisar los logs de Attu para confirmar que la conexión inicial con Milvus ha sido exitosa.
+- [x] 2.1 Levantar los servicios con `docker compose up -d` o equivalente.
+- [x] 2.2 Revisar los logs de Attu para confirmar que la conexión inicial con Milvus ha sido exitosa.

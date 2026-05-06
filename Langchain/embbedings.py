@@ -3,7 +3,7 @@ from langchain_ollama import OllamaEmbeddings
 
 class EmbeddingGenerator:
     def __init__(self):
-        self.model = OllamaEmbeddings(model = "embeddinggemma")
+        self.model = OllamaEmbeddings(model = "embeddinggemma", base_url = "")
     
     async def get_document_embedding(self,text: list[str]) -> list[list[float]]:
         """Genera embeddings para una lista de textos (documentos)"""
