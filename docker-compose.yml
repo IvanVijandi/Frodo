@@ -56,6 +56,16 @@ services: ##Levanta ollama en un contenedor de Docker
       - "etcd"
       - "minio"
 
+  attu:
+    container_name: milvus-attu
+    image: zilliz/attu:v2.4.0
+    environment:
+      MILVUS_URL: standalone:19530
+    ports:
+      - "8000:3000"
+    depends_on:
+      - "standalone"
+
 volumes:
   ollama_data:
   etcd_data:
