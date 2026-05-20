@@ -62,9 +62,23 @@ services: ##Levanta ollama en un contenedor de Docker
     environment:
       MILVUS_URL: standalone:19530
     ports:
-      - "8000:3000"
+      - "8001:3000"
     depends_on:
       - "standalone"
+
+  backend:
+    container_name: maria-backend
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      MILVUS_URI: http://milvus-standalone:19530
+      OLLAMA_URI: http://ollama:11434
+    depends_on:
+      - "standalone"
+      - "ollama"
 
 volumes:
   ollama_data:

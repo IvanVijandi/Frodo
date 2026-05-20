@@ -1,9 +1,11 @@
 from langchain_ollama import OllamaEmbeddings
 
 
+from config import conf
+
 class EmbeddingGenerator:
     def __init__(self):
-        self.model = OllamaEmbeddings(model = "embeddinggemma", base_url = "")
+        self.model = OllamaEmbeddings(model = "embeddinggemma", base_url = conf.OLLAMA_URI)
     
     async def get_document_embedding(self,text: list[str]) -> list[list[float]]:
         """Genera embeddings para una lista de textos (documentos)"""

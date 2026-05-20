@@ -2,3 +2,6 @@ fastapi[standard]
 langchain-ollama
 langchain_text_splitters
 langchain_community
+pymupdf
+langchain-milvus
+python-multipart
