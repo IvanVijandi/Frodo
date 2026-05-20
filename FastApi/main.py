@@ -1,4 +1,6 @@
 from fastapi import FastAPI, UploadFile, HTTPException, File, Depends, Request
+from pydantic import BaseModel
+from typing import Optional
 from contextlib import asynccontextmanager
 import tempfile
 import os
@@ -27,6 +29,10 @@ def get_milvus_client(request: Request):
 
 def get_embedding_generator(request: Request):
     return request.app.state.embedding_generator
+
+class QueryRequest(BaseModel):
+    query: str
+    pdf_ids: Optional[list[int]] = None
 
 ##Para probar que el servidor esta corriendo
 @app.get("/")
@@ -91,3 +97,27 @@ async def upload_file(
         # Limpiar el archivo temporal
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)
+
+@app.post("/get-document")
+async def get_document_endpoint(
+    request: QueryRequest,
+    milvus_client: Async_Milvus_Client = Depends(get_milvus_client),
+    embedding_generator: EmbeddingGenerator = Depends(get_embedding_generator)
+):
+    try:
+        # Generar el embedding de la query
+        query_vector = await embedding_generator.get_query_embedding(request.query)
+        
+        # Realizar la búsqueda en Milvus
+        results = await milvus_client.get_document(
+            query_vector=query_vector,
+            collection_name="documentos",
+            ids=request.pdf_ids
+        )
+        
+        return {
+            "message": "Búsqueda realizada con éxito.",
+            "results": results
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error durante la búsqueda: {e}")
