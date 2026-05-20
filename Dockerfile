@@ -1,5 +1,6 @@
 FROM python:3.10-slim
 
+##Creamos el directorio de trabajo en el contenedor
 WORKDIR /app
 
 # Instalar dependencias del sistema necesarias para algunas librerías de Python (como PyMuPDF o grpc)
@@ -11,7 +12,7 @@ COPY requeriments.txt .
 
 RUN pip install --no-cache-dir -r requeriments.txt
 
-# Como en desarrollo montaremos el volumen, esto es solo para cuando se construya sin volumen
+#Copiamos toda la app en el directorio /app del contenedor
 COPY . /app
 
 EXPOSE 8000

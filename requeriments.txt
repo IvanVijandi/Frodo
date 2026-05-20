@@ -5,3 +5,6 @@ langchain_community
 pymupdf
 langchain-milvus
 python-multipart
+voyageai
+pydantic-settings
+python-dotenv

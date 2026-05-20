@@ -1,6 +1,6 @@
 from pymilvus import MilvusClient, DataType, AsyncMilvusClient
 
-from ..config import conf 
+from config import conf 
   
 class Async_Milvus_Client:
     
