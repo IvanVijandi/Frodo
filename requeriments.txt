@@ -8,3 +8,4 @@ python-multipart
 voyageai
 pydantic-settings
 python-dotenv
+langchain-google-genai
