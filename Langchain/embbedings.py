@@ -1,24 +1,13 @@
 from config import conf
 from langchain_ollama import OllamaEmbeddings
-from langchain_openai import OpenAIEmbeddings
-from langchain_voyageai import VoyageAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
 
 
 class EmbeddingGenerator:
     def __init__(self):
         provider = conf.EMBEDDING_PROVIDER.lower()
-
-        if provider == "ollama":
-            self.model = OllamaEmbeddings(model="embeddinggemma", base_url=conf.OLLAMA_URI)
-
-        elif provider == "openai":
-            self.model = OpenAIEmbeddings(api_key=conf.OPENAI_API_KEY)
-
-        elif provider == "voyage":
-            self.model = VoyageAIEmbeddings(voyage_api_key=conf.VOYAGE_API_KEY)
-
-        else:
-            raise ValueError(f"Proveedor de embeddings no soportado: {provider}")
+        self.model = GoogleGenerativeAIEmbeddings(api_key=conf.GEMINI_API_KEY, model = "gemini-embedding-001", output_dimensionality = 768, task_type = "RETRIEVAL_DOCUMENT")
 
     async def get_document_embedding(self, text: list[str]) -> list[list[float]]:
         """Genera embeddings para una lista de textos (documentos)"""
