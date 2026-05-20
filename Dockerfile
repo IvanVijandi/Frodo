@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM python:3.10-slim
 
 ##Creamos el directorio de trabajo en el contenedor
@@ -10,7 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requeriments.txt .
 
-RUN pip install --no-cache-dir -r requeriments.txt
+# Usamos el cache de BuildKit para no descargar paquetes en cada rebuild
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requeriments.txt
 
 #Copiamos toda la app en el directorio /app del contenedor
 COPY . /app

@@ -8,12 +8,13 @@ from Langchain.embbedings import EmbeddingGenerator
 from Langchain.Splitter import Splitter
 from Langchain.Reranker import Reranker
 from Milvus.main import Async_Milvus_Client
+from config import conf
 
 ##Lifespan. Se encarga de inicializar y cerrar recursos al iniciar y cerrar el servidor.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ##Instancias de las clases pesadas guardadas en app.state
-    app.state.reranker = Reranker()
+    app.state.reranker = Reranker() if conf.RERANKER_PROVIDER.lower() != "none" else None
     app.state.embedding_generator = EmbeddingGenerator()  ## Lee EMBEDDING_PROVIDER del .env
     app.state.milvus_client = Async_Milvus_Client()
     yield
