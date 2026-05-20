@@ -1,0 +1,30 @@
+# Control de versiones
+.git
+.gitignore
+
+# Variables de entorno (se inyectan en runtime vía docker-compose)
+.env
+.env.example
+
+# Documentación y especificaciones
+openspec/
+Instrucciones.md
+*.md
+
+# Cache de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# IDEs y editores
+.vscode/
+.idea/
+*.code-workspace
+.agent/
