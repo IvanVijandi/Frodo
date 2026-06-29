@@ -10,13 +10,13 @@ class Reranker:
         
         lista_chunks = []
         
-        for i in document:
-            for j in i:
-                chunk = j['entity']['text_chunk']
-                lista_chunks.append(chunk)
+        for hit in document:
+            # hit es un objeto Hit de PyMilvus que se comporta como diccionario
+            chunk = hit['entity']['text_chunk']
+            lista_chunks.append(chunk)
         
         response = self.client.rerank(
-            model="rerank-2.5-lite",
+            model="rerank-2",
             query=query,
             documents=lista_chunks,
             top_k=3
@@ -25,7 +25,8 @@ class Reranker:
         lista_response = []
         
         for r in response.results:
-            lista_response.append(r.document)
+            # r.index nos dice en qué posición estaba este resultado en la lista original
+            original_hit = document[r.index]
+            lista_response.append(original_hit)
             
         return lista_response
-            

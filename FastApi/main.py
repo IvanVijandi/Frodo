@@ -5,16 +5,19 @@ from contextlib import asynccontextmanager
 import tempfile
 import os
 import time
-
 from Langchain.embbedings import EmbeddingGenerator
 from Langchain.Splitter import Splitter
 from Langchain.Reranker import Reranker
 from Milvus.main import Async_Milvus_Client
+from Milvus.setup_db import setup_database
 from config import conf
 
 ##Lifespan. Se encarga de inicializar y cerrar recursos al iniciar y cerrar el servidor.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Asegurar que la base de datos y la colección de Milvus estén listas
+    setup_database()
+    
     ##Instancias de las clases pesadas guardadas en app.state
     app.state.reranker = Reranker() if conf.RERANKER_PROVIDER.lower() != "none" else None
     app.state.embedding_generator = EmbeddingGenerator()  ## Lee EMBEDDING_PROVIDER del .env
@@ -29,6 +32,9 @@ def get_milvus_client(request: Request):
 
 def get_embedding_generator(request: Request):
     return request.app.state.embedding_generator
+
+def get_reranker(request: Request):
+    return request.app.state.reranker
 
 class QueryRequest(BaseModel):
     query: str
@@ -102,7 +108,8 @@ async def upload_file(
 async def get_document_endpoint(
     request: QueryRequest,
     milvus_client: Async_Milvus_Client = Depends(get_milvus_client),
-    embedding_generator: EmbeddingGenerator = Depends(get_embedding_generator)
+    embedding_generator: EmbeddingGenerator = Depends(get_embedding_generator),
+    reranker: Reranker = Depends(get_reranker)
 ):
     try:
         # Generar el embedding de la query
@@ -115,9 +122,17 @@ async def get_document_endpoint(
             ids=request.pdf_ids
         )
         
+        # Aplicar el Reranker si está disponible
+        if reranker is not None and len(results) > 0 and results[0]:
+            final_results = reranker.rerank(request.query, results)
+            msg = "Búsqueda y reranking realizados con éxito."
+        else:
+            final_results = results
+            msg = "Búsqueda realizada con éxito."
+        
         return {
-            "message": "Búsqueda realizada con éxito.",
-            "results": results
+            "message": msg,
+            "results": final_results
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error durante la búsqueda: {e}")

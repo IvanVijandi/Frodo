@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # Model Providers
     LLM_PROVIDER: str = "ollama"
     EMBEDDING_PROVIDER: str = "ollama"
-    RERANKER_PROVIDER: str = "none"
+    RERANKER_PROVIDER: str = "voyageai"
     
     # Local URIs
     OLLAMA_URI: str = "http://localhost:11434"

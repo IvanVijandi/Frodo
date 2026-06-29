@@ -22,50 +22,50 @@ def setup_database():
     
     collection_name = "documentos"
     
-    if client.has_collection(collection_name):
-        print(f"La colección '{collection_name}' ya existe. Borrándola para aplicar el nuevo esquema...")
-        client.drop_collection(collection_name)
-    
-    print("Definiendo esquema de la colección...")
-    schema = client.create_schema(auto_id=True, enable_dynamic_field=False)
-    
-    # 1. Campo ID auto-generado como clave primaria
-    schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True, description="Clave primaria auto-generada para cada chunk")
-    
-    # 2. ID del PDF (se ingresa manualmente para agrupar los chunks por archivo)
-    schema.add_field(field_name="pdf_id", datatype=DataType.INT64, description="ID del documento PDF al que pertenece el chunk")
-    
-    # 3. Vector chunk
-    schema.add_field(field_name="vector_chunk", datatype=DataType.FLOAT_VECTOR, dim=768, description="Vector de embedding")
-    
-    # 4. Text chunk
-    schema.add_field(field_name="text_chunk", datatype=DataType.VARCHAR, max_length=2000, description="Contenido de texto del chunk")
-    
-    # 5. Metadata como tipo JSON dinámico
-    schema.add_field(field_name="metadata", datatype=DataType.JSON, description="Metadatos en formato JSON")
-    
-    print("Creando parámetros de índice para 'vector_chunk'...")
-    index_params = client.prepare_index_params()
-    index_params.add_index(
-        field_name="vector_chunk",
-        metric_type="COSINE",
-        index_type="IVF_FLAT",
-        params={"nlist": 128}
-    )
-    
-    print(f"Creando la colección '{collection_name}'...")
-    client.create_collection(
-        collection_name=collection_name,
-        schema=schema,
-        index_params=index_params
-    )
-    
-    print(f"¡Colección '{collection_name}' creada exitosamente con el nuevo esquema!")
-    
-    # Mostrar la descripción de la nueva colección
-    desc = client.describe_collection(collection_name)
-    print("\nEsquema de la colección:")
-    print(desc)
+    if not client.has_collection(collection_name):
+        print("Definiendo esquema de la colección...")
+        schema = client.create_schema(auto_id=True, enable_dynamic_field=False)
+        
+        # 1. Campo ID auto-generado como clave primaria
+        schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True, description="Clave primaria auto-generada para cada chunk")
+        
+        # 2. ID del PDF (se ingresa manualmente para agrupar los chunks por archivo)
+        schema.add_field(field_name="pdf_id", datatype=DataType.INT64, description="ID del documento PDF al que pertenece el chunk")
+        
+        # 3. Vector chunk
+        schema.add_field(field_name="vector_chunk", datatype=DataType.FLOAT_VECTOR, dim=768, description="Vector de embedding")
+        
+        # 4. Text chunk
+        schema.add_field(field_name="text_chunk", datatype=DataType.VARCHAR, max_length=2000, description="Contenido de texto del chunk")
+        
+        # 5. Metadata como tipo JSON dinámico
+        schema.add_field(field_name="metadata", datatype=DataType.JSON, description="Metadatos en formato JSON")
+        
+        print("Creando parámetros de índice para 'vector_chunk'...")
+        index_params = client.prepare_index_params()
+        index_params.add_index(
+            field_name="vector_chunk",
+            metric_type="COSINE",
+            index_type="IVF_FLAT",
+            params={"nlist": 128}
+        )
+        
+        print(f"Creando la colección '{collection_name}'...")
+        client.create_collection(
+            collection_name=collection_name,
+            schema=schema,
+            index_params=index_params
+        )
+        
+        print(f"¡Colección '{collection_name}' creada exitosamente con el nuevo esquema!")
+        
+        # Mostrar la descripción de la nueva colección
+        desc = client.describe_collection(collection_name)
+        print("\nEsquema de la colección:")
+        print(desc)
+    else:
+        print(f"La colección '{collection_name}' ya existe. Cargando en memoria...")
+        client.load_collection(collection_name)
 
 if __name__ == "__main__":
     setup_database()

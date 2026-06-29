@@ -73,6 +73,8 @@ services: ##Levanta ollama en un contenedor de Docker
       - .:/app
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       MILVUS_URI: http://milvus-standalone:19530
       OLLAMA_URI: http://ollama:11434
