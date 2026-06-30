@@ -1,0 +1,24 @@
+[project]
+name = "maria"
+version = "0.1.0"
+description = "MARIA backend"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard]",
+    "langchain-ollama",
+    "langchain_text_splitters",
+    "langchain_community",
+    "pymupdf",
+    "langchain-milvus",
+    "python-multipart",
+    "voyageai",
+    "pydantic-settings",
+    "python-dotenv",
+    "langchain-google-genai",
+    "pypdf",
+    "langgraph"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

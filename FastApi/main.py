@@ -10,6 +10,7 @@ from Langchain.Splitter import Splitter
 from Langchain.Reranker import Reranker
 from Milvus.main import Async_Milvus_Client
 from Milvus.setup_db import setup_database
+from Langchain.graph import EvaluatorGraph
 from config import conf
 
 ##Lifespan. Se encarga de inicializar y cerrar recursos al iniciar y cerrar el servidor.
@@ -136,3 +137,40 @@ async def get_document_endpoint(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error durante la búsqueda: {e}")
+
+@app.post("/generarRespuesta")
+async def generar_respuesta_endpoint(
+    request: QueryRequest,
+    milvus_client: Async_Milvus_Client = Depends(get_milvus_client),
+    embedding_generator: EmbeddingGenerator = Depends(get_embedding_generator),
+    reranker: Reranker = Depends(get_reranker)
+):
+    try:
+        # Inicializar el grafo evaluador
+        evaluator_graph = EvaluatorGraph(
+            milvus_client=milvus_client,
+            embedding_generator=embedding_generator,
+            reranker=reranker
+        )
+        
+        # Estado inicial
+        initial_state = {
+            "query": request.query,
+            "pdf_ids": request.pdf_ids,
+            "context": "",
+            "response": "",
+            "feedback": "",
+            "eval_status": "",
+            "iteration": 0
+        }
+        
+        # Ejecutar el grafo
+        final_state = await evaluator_graph.graph.ainvoke(initial_state)
+        
+        return {
+            "message": "Respuesta evaluada y aprobada por el juez." if final_state["eval_status"] == "accepted" else "Límite de iteraciones alcanzado o sin contexto suficiente.",
+            "response": final_state["response"],
+            "iteration": final_state.get("iteration", 0)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error durante la generación de respuesta: {e}")

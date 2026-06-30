@@ -9,12 +9,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requeriments.txt .
+# Copiar uv desde su imagen oficial para usarlo como instalador de paquetes ultrarrápido
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Usamos el cache de BuildKit para no descargar paquetes en cada rebuild
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requeriments.txt
+COPY pyproject.toml uv.lock ./
 
-#Copiamos toda la app en el directorio /app del contenedor
+# Forzamos a uv a crear el entorno virtual fuera de /app para que el volumen de Docker no lo oculte
+ENV UV_PROJECT_ENVIRONMENT="/opt/venv"
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Sincronizamos las dependencias usando el lockfile
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-dev
+
+# Copiamos toda la app en el directorio /app del contenedor
 COPY . /app
 
 EXPOSE 8000
