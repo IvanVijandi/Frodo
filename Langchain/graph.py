@@ -7,7 +7,6 @@ from config import conf
 # Definición del estado del grafo
 class State(TypedDict):
     query: str
-    pdf_ids: Optional[list[int]]
     context: str
     response: str
     feedback: str
@@ -72,8 +71,7 @@ class EvaluatorGraph:
             query_vector = await self.embedding_generator.get_query_embedding(query)
             results = await self.milvus_client.get_document(
                 query_vector=query_vector,
-                collection_name="documentos",
-                ids=state.get("pdf_ids")
+                collection_name="documentos"
             )
             
             if self.reranker and len(results) > 0:

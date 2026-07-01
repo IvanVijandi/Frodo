@@ -25,15 +25,9 @@ class Async_Milvus_Client:
         print(f"resultado de la insercion: {res}, en la coleccion: {collection_name}")
 
 
-    async def get_document(self, query_vector: list[float], collection_name: str, filter: str = "", ids: list[int] = None):
+    async def get_document(self, query_vector: list[float], collection_name: str, filter: str = ""):
         
-        # Construir filtro por IDs si se proporcionan
-        if ids and len(ids) > 0:
-            ids_filter = f"pdf_id in {ids}"
-            # Combinar con filtro existente si lo hay
-            final_filter = f"({filter}) and ({ids_filter})" if filter else ids_filter
-        else:
-            final_filter = filter
+        final_filter = filter
         
         res = await self.client.search(
             collection_name=collection_name,
@@ -42,7 +36,7 @@ class Async_Milvus_Client:
             limit = 5,
             search_params={"metric_type":"COSINE"},
             filter = final_filter,
-            output_fields = ["text_chunk", "pdf_id"]
+            output_fields = ["text_chunk"]
         )
         
         lista = []

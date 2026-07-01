@@ -39,7 +39,6 @@ def get_reranker(request: Request):
 
 class QueryRequest(BaseModel):
     query: str
-    pdf_ids: Optional[list[int]] = None
 
 ##Para probar que el servidor esta corriendo
 @app.get("/")
@@ -88,16 +87,14 @@ async def upload_file(
 
         # 4. Formatear e insertar en Milvus
         try:
-            pdf_id = int(time.time())
-            data_to_insert = embedding_generator.format_database(docs, vector_chunks, pdf_id)
+            data_to_insert = embedding_generator.format_database(docs, vector_chunks)
             await milvus_client.upload_document(data=data_to_insert, collection_name="documentos")
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error al almacenar en la base de datos: {e}")
 
         return {
             "message": "Archivo cargado y procesado con éxito.",
-            "chunks_procesados": len(docs),
-            "pdf_id": pdf_id
+            "chunks_procesados": len(docs)
         }
 
     finally:
@@ -119,8 +116,7 @@ async def get_document_endpoint(
         # Realizar la búsqueda en Milvus
         results = await milvus_client.get_document(
             query_vector=query_vector,
-            collection_name="documentos",
-            ids=request.pdf_ids
+            collection_name="documentos"
         )
         
         # Aplicar el Reranker si está disponible
@@ -156,7 +152,6 @@ async def generar_respuesta_endpoint(
         # Estado inicial
         initial_state = {
             "query": request.query,
-            "pdf_ids": request.pdf_ids,
             "context": "",
             "response": "",
             "feedback": "",

@@ -1,9 +1,6 @@
 import sys
 import os
-
-# Añadir el directorio raíz al path para poder importar config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from pymilvus import MilvusClient, DataType
 from config import conf
 
@@ -26,28 +23,32 @@ def setup_database():
         print("Definiendo esquema de la colección...")
         schema = client.create_schema(auto_id=True, enable_dynamic_field=False)
         
-        # 1. Campo ID auto-generado como clave primaria
+        #  Campo ID auto-generado como clave primaria
         schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True, description="Clave primaria auto-generada para cada chunk")
         
-        # 2. ID del PDF (se ingresa manualmente para agrupar los chunks por archivo)
-        schema.add_field(field_name="pdf_id", datatype=DataType.INT64, description="ID del documento PDF al que pertenece el chunk")
-        
-        # 3. Vector chunk
+        #  Vector chunk
         schema.add_field(field_name="vector_chunk", datatype=DataType.FLOAT_VECTOR, dim=768, description="Vector de embedding")
         
-        # 4. Text chunk
+        # Text chunk
         schema.add_field(field_name="text_chunk", datatype=DataType.VARCHAR, max_length=2000, description="Contenido de texto del chunk")
         
-        # 5. Metadata como tipo JSON dinámico
+        # Metadata como tipo JSON dinámico
         schema.add_field(field_name="metadata", datatype=DataType.JSON, description="Metadatos en formato JSON")
         
-        print("Creando parámetros de índice para 'vector_chunk'...")
+        # Entity group para filtrado escalar optimizado
+        schema.add_field(field_name="prestacion", datatype=DataType.VARCHAR, max_length=255, description="Campo escalar para filtrado optimizado de entidades")
+        
+      
         index_params = client.prepare_index_params()
         index_params.add_index(
             field_name="vector_chunk",
             metric_type="COSINE",
             index_type="IVF_FLAT",
             params={"nlist": 128}
+        )
+        
+        index_params.add_index( ## Automaticamente selecciona el mas adecuado
+            field_name="prestacion",
         )
         
         print(f"Creando la colección '{collection_name}'...")
