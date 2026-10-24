@@ -125,6 +125,20 @@ export function useChatStorage() {
     return fullMessage;
   };
 
+  const updateMessage = (convId, msgId, updates) => {
+    setConversations((prev) =>
+      prev.map((conv) => {
+        if (conv.id !== convId) return conv;
+        return {
+          ...conv,
+          messages: conv.messages.map((msg) =>
+            msg.id === msgId ? { ...msg, ...(typeof updates === 'function' ? updates(msg) : updates) } : msg
+          ),
+        };
+      })
+    );
+  };
+
   return {
     conversations,
     activeConversation,
@@ -133,6 +147,7 @@ export function useChatStorage() {
     selectConversation,
     deleteConversation,
     addMessage,
+    updateMessage,
   };
 }
 

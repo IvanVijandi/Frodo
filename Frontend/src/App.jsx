@@ -17,6 +17,7 @@ export function App() {
     selectConversation,
     deleteConversation,
     addMessage,
+    updateMessage,
   } = useChatStorage();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -81,22 +82,55 @@ export function App() {
 
     setIsLoading(true);
 
-    try {
-      // 2. Invocar backend FastAPI pasando el bucket
-      const result = await api.sendMessage(queryText, bucketToUse);
+    let assistantMsgId = null;
 
-      // 3. Agregar respuesta de MARIA
-      addMessage(currentConvId, {
-        role: 'assistant',
-        text: result.response || 'No se obtuvo respuesta del modelo.',
-        iteration: result.iteration,
+    try {
+      // 2. Invocar backend FastAPI con streaming en vivo
+      let accumulatedText = '';
+      const result = await api.sendMessage(queryText, bucketToUse, (token, currentFull) => {
+        accumulatedText = currentFull;
+        if (!assistantMsgId) {
+          setIsLoading(false); // Ocultar shimmer cuando empieza a escribir
+          const newMsg = addMessage(currentConvId, {
+            role: 'assistant',
+            text: currentFull,
+            isStreaming: true,
+          });
+          assistantMsgId = newMsg.id;
+        } else {
+          updateMessage(currentConvId, assistantMsgId, {
+            text: currentFull,
+            isStreaming: true,
+          });
+        }
       });
+
+      // 3. Finalizar respuesta del asistente
+      if (assistantMsgId) {
+        updateMessage(currentConvId, assistantMsgId, {
+          text: accumulatedText || result?.response || 'No se obtuvo respuesta del modelo.',
+          isStreaming: false,
+        });
+      } else {
+        addMessage(currentConvId, {
+          role: 'assistant',
+          text: result?.response || 'No se obtuvo respuesta del modelo.',
+          iteration: result?.iteration,
+        });
+      }
     } catch (err) {
       console.error('Error al generar respuesta:', err);
-      addMessage(currentConvId, {
-        role: 'assistant',
-        text: `⚠️ **Error al consultar el asistente**: ${err.message || 'Error de conexión con el backend'}. Verifica que los servicios de FastAPI, Milvus y Ollama estén corriendo.`,
-      });
+      if (assistantMsgId) {
+        updateMessage(currentConvId, assistantMsgId, {
+          text: `⚠️ **Error al consultar el asistente**: ${err.message || 'Error de conexión con el backend'}. Verifica que los servicios de FastAPI, Milvus y Ollama estén corriendo.`,
+          isStreaming: false,
+        });
+      } else {
+        addMessage(currentConvId, {
+          role: 'assistant',
+          text: `⚠️ **Error al consultar el asistente**: ${err.message || 'Error de conexión con el backend'}. Verifica que los servicios de FastAPI, Milvus y Ollama estén corriendo.`,
+        });
+      }
     } finally {
       setIsLoading(false);
     }

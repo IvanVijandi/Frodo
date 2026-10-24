@@ -8,12 +8,14 @@ if _backend_dir not in sys.path:
     sys.path.insert(0, _backend_dir)
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from fastapi import FastAPI, UploadFile, HTTPException, File, Form, Depends, Request
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from contextlib import asynccontextmanager
 import tempfile
 import time
+import json
 
 try:
     from Langchain.embbedings import EmbeddingGenerator
@@ -112,6 +114,7 @@ class BucketCreateRequest(BaseModel):
 class QueryRequest(BaseModel):
     query: str = Field(..., description="Pregunta o consulta del usuario", example="¿Cuáles son las cláusulas de rescisión del contrato?")
     bucket_name: Optional[str] = Field("general", description="Nombre del bucket sobre el que realizar la búsqueda", example="general")
+    stream: Optional[bool] = Field(True, description="Si es True, transmite la respuesta en tiempo real vía SSE (Server-Sent Events)")
 
 ## Health Check
 @app.get(
@@ -344,7 +347,7 @@ async def get_document_endpoint(
     "/generarRespuesta",
     tags=["RAG & Búsqueda"],
     summary="Generar respuesta RAG evaluada sobre un bucket",
-    description="Ejecuta el grafo LangGraph (EvaluatorGraph): recupera contexto del bucket, genera respuesta y la somete a evaluación del juez para evitar alucinaciones."
+    description="Recupera contexto del bucket seleccionado y genera la respuesta con streaming en vivo de Ollama o evaluada con LangGraph."
 )
 async def generar_respuesta_endpoint(
     request: QueryRequest,
@@ -357,13 +360,91 @@ async def generar_respuesta_endpoint(
     if not await milvus_client.bucket_exists(target_bucket):
         raise HTTPException(status_code=404, detail=f"El bucket '{target_bucket}' no existe.")
 
-    try:
-        evaluator_graph = EvaluatorGraph(
-            milvus_client=milvus_client,
-            embedding_generator=embedding_generator,
-            reranker=reranker
+    evaluator_graph = EvaluatorGraph(
+        milvus_client=milvus_client,
+        embedding_generator=embedding_generator,
+        reranker=reranker
+    )
+
+    if request.stream:
+        async def event_generator():
+            try:
+                # 1. Recuperar contexto vectorial desde Milvus
+                query_vector = await embedding_generator.get_query_embedding(request.query)
+                results = await milvus_client.get_document(
+                    query_vector=query_vector,
+                    collection_name=target_bucket
+                )
+
+                hits = results[0] if (results and isinstance(results, list) and len(results) > 0 and isinstance(results[0], list)) else (results or [])
+                if reranker and len(hits) > 0:
+                    final_results = reranker.rerank(request.query, hits)
+                else:
+                    final_results = hits
+
+                context_chunks = []
+                for hit in final_results:
+                    text = ""
+                    if isinstance(hit, dict):
+                        entity = hit.get('entity', {})
+                        if isinstance(entity, dict):
+                            text = entity.get('text') or entity.get('text_chunk') or ""
+                        text = text or hit.get('text') or hit.get('text_chunk') or ""
+                    else:
+                        entity = getattr(hit, 'entity', None)
+                        if entity:
+                            text = getattr(entity, 'text', '') or getattr(entity, 'text_chunk', '')
+                        text = text or getattr(hit, 'text', '') or getattr(hit, 'text_chunk', '')
+                    if text:
+                        context_chunks.append(text)
+
+                context = "\n\n".join(context_chunks)
+                print(f"[RAG Stream] Bucket: '{target_bucket}' | Hits: {len(hits)} | Chunks texto: {len(context_chunks)}")
+
+                # 2. Prompt estricto basado en contexto
+                if not context.strip():
+                    prompt = f"""Eres un asistente útil de MARIA. El usuario hizo la siguiente pregunta:
+"{request.query}"
+
+Sin embargo, en el bucket '{target_bucket}' no se encontró contexto ni fragmentos relacionados en los documentos.
+Explica cortésmente que en los documentos indexados en el bucket '{target_bucket}' no se cuenta con información suficiente para responder, e invita al usuario a verificar los documentos o subir el archivo PDF correspondiente.
+"""
+                else:
+                    prompt = f"""Eres un asistente útil. Debes responder a la PREGUNTA utilizando ÚNICAMENTE la información proporcionada en el CONTEXTO.
+Si el contexto no contiene información suficiente para responder, no inventes nada; debes indicar claramente que no cuentas con la información suficiente en los documentos para responder.
+
+PREGUNTA: {request.query}
+
+CONTEXTO:
+{context}
+"""
+
+                # 3. Transmitir tokens en vivo tan pronto Ollama empiece a generar
+                accumulated = ""
+                async for chunk in evaluator_graph.generator_llm.astream(prompt):
+                    content = chunk.content if hasattr(chunk, 'content') else str(chunk)
+                    if content:
+                        accumulated += content
+                        yield f"data: {json.dumps({'token': content, 'done': False})}\n\n"
+
+                # 4. Finalizar stream con evento 'done'
+                yield f"data: {json.dumps({'token': '', 'done': True, 'response': accumulated, 'bucket': target_bucket})}\n\n"
+
+            except Exception as stream_err:
+                print(f"Error durante streaming: {stream_err}")
+                yield f"data: {json.dumps({'error': str(stream_err), 'done': True})}\n\n"
+
+        return StreamingResponse(
+            event_generator(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
         )
-        
+
+    try:
         initial_state = {
             "query": request.query,
             "bucket_name": target_bucket,

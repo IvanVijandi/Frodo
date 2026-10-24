@@ -1,6 +1,7 @@
 import sys
 import os
 import datetime
+import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pymilvus import MilvusClient, DataType
 
@@ -10,7 +11,7 @@ except ModuleNotFoundError:
     from Backend.config import conf
 
 REGISTRY_COLLECTION = "_buckets_registry"
-DEFAULT_VECTOR_DIM = 768
+DEFAULT_VECTOR_DIM = getattr(conf, "VECTOR_DIM", 768)
 
 def create_bucket_collection(client: MilvusClient, bucket_name: str, dim: int = DEFAULT_VECTOR_DIM):
     """
@@ -117,47 +118,62 @@ def register_bucket_metadata(client: MilvusClient, bucket_name: str, content_typ
         data=data
     )
 
-def setup_database():
+def setup_database(max_retries: int = 15, retry_delay: float = 2.0):
     """
-    Inicializa la base de datos 'MARIA', el registro de buckets y el bucket por defecto 'general'.
+    Inicializa la base de datos 'MARIA', el registro de buckets y el bucket por defecto 'general',
+    con reintentos para esperar a que Milvus esté completamente disponible.
     """
-    print(f"Conectando a Milvus en {conf.MILVUS_URI}...")
-    init_client = MilvusClient(uri=conf.MILVUS_URI)
+    last_err = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f"Conectando a Milvus en {conf.MILVUS_URI} (intento {attempt}/{max_retries})...")
+            init_client = MilvusClient(uri=conf.MILVUS_URI)
 
-    # 1. Asegurar base de datos
-    databases = init_client.list_databases()
-    if "MARIA" not in databases:
-        print("Creando base de datos 'MARIA'...")
-        init_client.create_database("MARIA")
-        print("Base de datos 'MARIA' creada exitosamente.")
-    else:
-        print("La base de datos 'MARIA' ya existe.")
+            # 1. Asegurar base de datos
+            databases = init_client.list_databases()
+            if "MARIA" not in databases:
+                print("Creando base de datos 'MARIA'...")
+                init_client.create_database("MARIA")
+                print("Base de datos 'MARIA' creada exitosamente.")
+            else:
+                print("La base de datos 'MARIA' ya existe.")
 
-    init_client.close()
+            init_client.close()
 
-    # Conectar directamente con db_name="MARIA"
-    client = MilvusClient(uri=conf.MILVUS_URI, db_name="MARIA")
+            # Conectar directamente con db_name="MARIA"
+            client = MilvusClient(uri=conf.MILVUS_URI, db_name="MARIA")
 
-    # 2. Asegurar colección de registro
-    setup_registry(client)
+            # 2. Asegurar colección de registro
+            setup_registry(client)
 
-    # 3. Asegurar bucket por defecto 'general'
-    create_bucket_collection(client, "general", dim=DEFAULT_VECTOR_DIM)
-    try:
-        existing = client.get(
-            collection_name=REGISTRY_COLLECTION,
-            ids=["general"]
-        )
-        if not existing:
-            register_bucket_metadata(
-                client=client,
-                bucket_name="general",
-                content_type="general",
-                description="Bucket general por defecto para almacenamiento de documentos",
-                metadata={"default": True}
-            )
-    except Exception as e:
-        print(f"Nota al registrar bucket 'general': {e}")
+            # 3. Asegurar bucket por defecto 'general'
+            create_bucket_collection(client, "general", dim=DEFAULT_VECTOR_DIM)
+            try:
+                existing = client.get(
+                    collection_name=REGISTRY_COLLECTION,
+                    ids=["general"]
+                )
+                if not existing:
+                    register_bucket_metadata(
+                        client=client,
+                        bucket_name="general",
+                        content_type="general",
+                        description="Bucket general por defecto para almacenamiento de documentos",
+                        metadata={"default": True}
+                    )
+            except Exception as e:
+                print(f"Nota al registrar bucket 'general': {e}")
+            
+            print("Inicialización de base de datos MARIA y registro completada exitosamente.")
+            return
+        except Exception as e:
+            last_err = e
+            if attempt < max_retries:
+                print(f"Milvus aún no está listo ({e}). Reintentando en {retry_delay}s...")
+                time.sleep(retry_delay)
+            else:
+                print(f"Error definitivo inicializando Milvus tras {max_retries} intentos: {e}")
+                raise last_err
 
 if __name__ == "__main__":
     setup_database()

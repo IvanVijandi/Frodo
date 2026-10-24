@@ -8,7 +8,7 @@ except ModuleNotFoundError:
     from Backend.config import conf
 
 REGISTRY_COLLECTION = "_buckets_registry"
-DEFAULT_VECTOR_DIM = 768
+DEFAULT_VECTOR_DIM = getattr(conf, "VECTOR_DIM", 768)
 
 def normalize_bucket_name(name: str) -> str:
     """Normaliza un nombre de bucket a caracteres alfanuméricos en minúsculas y guiones bajos."""
@@ -24,6 +24,39 @@ class Async_Milvus_Client:
     def __init__(self):
         self.client = AsyncMilvusClient(uri=conf.MILVUS_URI, db_name="MARIA")
         self.sync_client = MilvusClient(uri=conf.MILVUS_URI, db_name="MARIA")
+
+    async def _ensure_registry(self):
+        """Asegura que la colección interna de registro _buckets_registry exista en Milvus."""
+        try:
+            collections = await self.client.list_collections()
+            if REGISTRY_COLLECTION not in collections:
+                reg_schema = MilvusClient.create_schema(
+                    auto_id=False,
+                    enable_dynamic_field=True,
+                )
+                reg_schema.add_field(field_name="bucket_name", datatype=DataType.VARCHAR, max_length=128, is_primary=True)
+                reg_schema.add_field(field_name="content_type", datatype=DataType.VARCHAR, max_length=100)
+                reg_schema.add_field(field_name="description", datatype=DataType.VARCHAR, max_length=1000)
+                reg_schema.add_field(field_name="created_at", datatype=DataType.VARCHAR, max_length=64)
+                reg_schema.add_field(field_name="metadata", datatype=DataType.JSON)
+
+                index_params = self.sync_client.prepare_index_params()
+                index_params.add_index(
+                    field_name="bucket_name",
+                    index_type="INVERTED"
+                )
+
+                await self.client.create_collection(
+                    collection_name=REGISTRY_COLLECTION,
+                    schema=reg_schema,
+                    index_params=index_params
+                )
+                try:
+                    await self.client.load_collection(collection_name=REGISTRY_COLLECTION)
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"Nota en _ensure_registry: {e}")
 
     async def bucket_exists(self, bucket_name: str) -> bool:
         """Verifica si la colección de un bucket existe en Milvus."""
@@ -45,6 +78,8 @@ class Async_Milvus_Client:
         clean_name = normalize_bucket_name(name)
         if clean_name == REGISTRY_COLLECTION:
             raise ValueError(f"El nombre '{clean_name}' está reservado para el sistema.")
+
+        await self._ensure_registry()
 
         collections = await self.client.list_collections()
         if clean_name not in collections:
@@ -103,6 +138,7 @@ class Async_Milvus_Client:
         """
         Lista todos los buckets registrados junto con sus metadatos y conteo de fragmentos.
         """
+        await self._ensure_registry()
         # 1. Obtener colecciones físicas en Milvus
         physical_collections = set(await self.client.list_collections())
         physical_collections.discard(REGISTRY_COLLECTION)
@@ -147,6 +183,7 @@ class Async_Milvus_Client:
 
     async def get_bucket(self, name: str) -> dict | None:
         """Obtiene la información y metadatos de un bucket específico."""
+        await self._ensure_registry()
         clean_name = normalize_bucket_name(name)
         if not await self.bucket_exists(clean_name):
             return None
@@ -227,7 +264,11 @@ class Async_Milvus_Client:
             filter=filter,
             output_fields=["id", "text", "source_file", "content_type", "metadata"]
         )
-        return results
+        # En pymilvus search devuelve una lista por cada vector de consulta en data.
+        # Desempaquetamos results[0] para retornar una lista plana de hits.
+        if results and isinstance(results, list) and len(results) > 0 and isinstance(results[0], list):
+            return results[0]
+        return results or []
 
     async def upload_document(self, data: list[dict], collection_name: str = "general"):
         """Inserta chunks de documentos en el bucket especificado."""

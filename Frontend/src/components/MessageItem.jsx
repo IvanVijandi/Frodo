@@ -22,10 +22,10 @@ export function MessageItem({ message }) {
     if (isAssistant) {
       const htmlContent = marked.parse(message.text || '');
       return (
-        <div
-          className="gemini-markdown-body"
-          dangerouslySetInnerHTML={{ __html: htmlContent }}
-        />
+        <div className="gemini-markdown-body">
+          <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+          {message.isStreaming && <span className="gemini-cursor-blink">▍</span>}
+        </div>
       );
     }
     return <div className="gemini-user-text">{message.text}</div>;

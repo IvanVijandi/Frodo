@@ -6,11 +6,17 @@ class Settings(BaseSettings):
     # Milvus Configuration
     MILVUS_URI: str = "http://localhost:19530"
     MILVUS_TOKEN: Optional[str] = None
+    VECTOR_DIM: int = 768
     
     # Model Providers
     LLM_PROVIDER: str = "ollama"
     EMBEDDING_PROVIDER: str = "ollama"
     RERANKER_PROVIDER: str = "voyageai"
+    
+    # Model Names
+    LLM_MODEL: str = "qwen3.5:4b"
+    EMBEDDING_MODEL: str = "embeddinggemma"
+    EVALUATOR_MODEL: Optional[str] = None
     
     # Local URIs
     OLLAMA_URI: str = "http://localhost:11434"

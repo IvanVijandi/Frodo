@@ -12,18 +12,20 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 class EmbeddingGenerator:
     def __init__(self):
         provider = conf.EMBEDDING_PROVIDER.lower()
-        if provider == "google" or conf.GEMINI_API_KEY:
+        if provider == "ollama":
+            self.model = OllamaEmbeddings(
+                base_url=conf.OLLAMA_URI,
+                model=conf.EMBEDDING_MODEL
+            )
+        elif provider == "google":
             self.model = GoogleGenerativeAIEmbeddings(
                 api_key=conf.GEMINI_API_KEY,
-                model="gemini-embedding-001",
-                output_dimensionality=768,
+                model=conf.EMBEDDING_MODEL or "gemini-embedding-001",
+                output_dimensionality=conf.VECTOR_DIM,
                 task_type="RETRIEVAL_DOCUMENT"
             )
         else:
-            self.model = OllamaEmbeddings(
-                base_url=conf.OLLAMA_URI,
-                model="nomic-embed-text"
-            )
+            raise ValueError(f"Proveedor de embeddings '{provider}' no soportado.")
 
     async def get_document_embedding(self, text: list[str]) -> list[list[float]]:
         """Genera embeddings para una lista de textos (documentos)."""

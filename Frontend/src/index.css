@@ -1609,3 +1609,16 @@ body {
     padding: 0 14px 12px;
   }
 }
+
+.gemini-cursor-blink {
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--gemini-accent, #7c3aed);
+  font-weight: bold;
+  animation: cursorBlink 0.8s infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

@@ -48,6 +48,9 @@ services:
       MINIO_ADDRESS: minio:9000
     volumes:
       - milvus_data:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
     depends_on:
       - "etcd"
       - "minio"
@@ -72,8 +75,8 @@ services:
     env_file:
       - .env
     environment:
-      MILVUS_URI: http://milvus-standalone:19530
-      OLLAMA_URI: http://ollama:11434
+      MILVUS_URI: http://standalone:19530
+      OLLAMA_URI: ${OLLAMA_URI:-http://host.docker.internal:11434}
     depends_on:
       - "standalone"
       - "ollama"

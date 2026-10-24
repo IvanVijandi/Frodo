@@ -1,6 +1,7 @@
 from typing import TypedDict, Literal, Optional
 from pydantic import BaseModel, Field
 from langgraph.graph import StateGraph, START, END
+from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 try:
@@ -33,17 +34,35 @@ class EvaluatorGraph:
         self.embedding_generator = embedding_generator
         self.reranker = reranker
         
-        # Generador: LLM Gemini 
-        self.generator_llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash-lite",
-            api_key=conf.GEMINI_API_KEY
-        )
-        
-        # Evaluador: LLM Gemini
-        self.evaluator_llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash", 
-            api_key=conf.GEMINI_API_KEY
-        ).with_structured_output(Feedback)
+        provider = conf.LLM_PROVIDER.lower()
+        if provider == "ollama":
+            evaluator_model = conf.EVALUATOR_MODEL or conf.LLM_MODEL
+            # Generador: Ollama
+            self.generator_llm = ChatOllama(
+                base_url=conf.OLLAMA_URI,
+                model=conf.LLM_MODEL,
+                temperature=0.2
+            )
+            # Evaluador: Ollama
+            self.evaluator_llm = ChatOllama(
+                base_url=conf.OLLAMA_URI,
+                model=evaluator_model,
+                temperature=0.0
+            ).with_structured_output(Feedback)
+        elif provider == "google":
+            evaluator_model = conf.EVALUATOR_MODEL or "gemini-2.5-flash"
+            # Generador: LLM Gemini 
+            self.generator_llm = ChatGoogleGenerativeAI(
+                model=conf.LLM_MODEL or "gemini-2.5-flash-lite",
+                api_key=conf.GEMINI_API_KEY
+            )
+            # Evaluador: LLM Gemini
+            self.evaluator_llm = ChatGoogleGenerativeAI(
+                model=evaluator_model, 
+                api_key=conf.GEMINI_API_KEY
+            ).with_structured_output(Feedback)
+        else:
+            raise ValueError(f"Proveedor de LLM '{provider}' no soportado.")
         
         # Constructor del Grafo
         builder = StateGraph(State)
@@ -80,19 +99,32 @@ class EvaluatorGraph:
                 collection_name=bucket
             )
             
-            if self.reranker and len(results) > 0 and results[0]:
-                final_results = self.reranker.rerank(query, results)
+            # Asegurar lista plana de hits (desempaquetar si viene anidado)
+            hits = results[0] if (results and isinstance(results, list) and len(results) > 0 and isinstance(results[0], list)) else (results or [])
+            
+            if self.reranker and len(hits) > 0:
+                final_results = self.reranker.rerank(query, hits)
             else:
-                final_results = results
+                final_results = hits
                 
             # Combinar todos los chunks en un solo texto de contexto
             context_chunks = []
             for hit in final_results:
-                entity = hit.get('entity', {}) if isinstance(hit, dict) else getattr(hit, 'entity', {})
-                text = entity.get('text') or entity.get('text_chunk', '')
+                text = ""
+                if isinstance(hit, dict):
+                    entity = hit.get('entity', {})
+                    if isinstance(entity, dict):
+                        text = entity.get('text') or entity.get('text_chunk') or ""
+                    text = text or hit.get('text') or hit.get('text_chunk') or ""
+                else:
+                    entity = getattr(hit, 'entity', None)
+                    if entity:
+                        text = getattr(entity, 'text', '') or getattr(entity, 'text_chunk', '')
+                    text = text or getattr(hit, 'text', '') or getattr(hit, 'text_chunk', '')
                 if text:
                     context_chunks.append(text)
             context = "\n\n".join(context_chunks)
+            print(f"[RAG] Bucket: '{bucket}' | Hits recuperados: {len(hits)} | Chunks con texto: {len(context_chunks)}")
         else:
             # En iteraciones posteriores usamos el contexto que ya buscamos
             context = state["context"]
