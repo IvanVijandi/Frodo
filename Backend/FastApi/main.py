@@ -9,8 +9,8 @@ if _backend_dir not in sys.path:
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, UploadFile, HTTPException, File, Form, Depends, Request
-from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from pydantic import BaseModel, Field
+from typing import Optional, Dict, Any, List
 from contextlib import asynccontextmanager
 import tempfile
 import time
@@ -36,14 +36,53 @@ except ModuleNotFoundError:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Asegurar base de datos, registro y bucket general en Milvus
-    setup_database()
+    try:
+        setup_database()
+    except Exception as e:
+        print(f"Advertencia durante setup_database en Milvus: {e}")
     
     app.state.reranker = Reranker() if conf.RERANKER_PROVIDER.lower() != "none" else None
     app.state.embedding_generator = EmbeddingGenerator()
     app.state.milvus_client = Async_Milvus_Client()
     yield
 
-app = FastAPI(lifespan=lifespan)
+tags_metadata = [
+    {
+        "name": "Buckets",
+        "description": "Operaciones para crear, listar, inspeccionar y eliminar colecciones vectoriales temáticas en Milvus.",
+    },
+    {
+        "name": "Ingesta",
+        "description": "Extracción de texto, fragmentación (chunking), generación de embeddings e indexación de PDFs.",
+    },
+    {
+        "name": "RAG & Búsqueda",
+        "description": "Búsqueda vectorial semántica con reranking y generación de respuestas fundamentadas evaluadas con LangGraph.",
+    },
+    {
+        "name": "Sistema",
+        "description": "Comprobación de estado y disponibilidad del servicio.",
+    },
+]
+
+app = FastAPI(
+    title="MARIA - RAG API & Knowledge Engine",
+    description="""
+# 🤖 MARIA - Asistente RAG Multi-Bucket
+
+Bienvenido a la documentación interactiva Swagger de la API de **MARIA**.
+Esta plataforma permite:
+* **Crear y administrar Buckets**: Organiza tus documentos en colecciones vectoriales separadas según su tipo de contenido (*legal*, *financiero*, *técnico*, *general*).
+* **Ingesta de Documentos PDF**: Sube archivos PDF para ser procesados, divididos en fragmentos e indexados en Milvus.
+* **Consultas RAG Inteligentes**: Realiza preguntas dirigidas a un bucket específico con recuperación semántica, reranking opcional y evaluación de alucinaciones con LangGraph.
+    """,
+    version="2.0.0",
+    openapi_tags=tags_metadata,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    lifespan=lifespan,
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -65,41 +104,54 @@ def get_reranker(request: Request) -> Optional[Reranker]:
 
 # Modelos Pydantic
 class BucketCreateRequest(BaseModel):
-    name: str
-    content_type: str = "general"
-    description: Optional[str] = ""
-    metadata: Optional[Dict[str, Any]] = {}
+    name: str = Field(..., description="Nombre del bucket (ej: 'legal_docs', 'finanzas_2026')", example="legal_docs")
+    content_type: str = Field("general", description="Categoría temática del contenido", example="legal")
+    description: Optional[str] = Field("", description="Descripción del propósito del bucket", example="Contratos y normativas legales")
+    metadata: Optional[Dict[str, Any]] = Field({}, description="Metadatos adicionales en formato clave-valor", example={"tags": ["contratos", "2026"]})
 
 class QueryRequest(BaseModel):
-    query: str
-    bucket_name: Optional[str] = "general"
+    query: str = Field(..., description="Pregunta o consulta del usuario", example="¿Cuáles son las cláusulas de rescisión del contrato?")
+    bucket_name: Optional[str] = Field("general", description="Nombre del bucket sobre el que realizar la búsqueda", example="general")
 
 ## Health Check
-@app.get("/")
+@app.get(
+    "/",
+    tags=["Sistema"],
+    summary="Health check del servicio",
+    description="Verifica que la API esté activa y respondiendo correctamente."
+)
 async def ok():
-    return {"message": "ok", "service": "MARIA Backend"}
+    return {"message": "ok", "service": "MARIA Backend", "version": "2.0.0"}
 
 # ==============================================================================
 # Endpoints de Gestión de Buckets
 # ==============================================================================
 
-@app.get("/buckets")
+@app.get(
+    "/buckets",
+    tags=["Buckets"],
+    summary="Listar todos los buckets registrados",
+    description="Devuelve la lista de todos los buckets con su tipo de contenido, descripción, fecha de creación y conteo de fragmentos indexados."
+)
 async def list_buckets(
     milvus_client: Async_Milvus_Client = Depends(get_milvus_client)
 ):
-    """Lista todos los buckets registrados en Milvus con sus metadatos y estadísticas."""
     try:
         buckets = await milvus_client.list_buckets()
         return {"buckets": buckets}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al listar buckets: {e}")
 
-@app.post("/buckets")
+@app.post(
+    "/buckets",
+    tags=["Buckets"],
+    summary="Crear un nuevo bucket",
+    description="Crea una nueva colección vectorial en Milvus con índice optimizado y registra sus metadatos de tipo de contenido."
+)
 async def create_bucket(
     request: BucketCreateRequest,
     milvus_client: Async_Milvus_Client = Depends(get_milvus_client)
 ):
-    """Crea un nuevo bucket con un tipo de contenido, descripción y metadatos específicos."""
     if not request.name.strip():
         raise HTTPException(status_code=400, detail="El nombre del bucket no puede estar vacío.")
 
@@ -119,23 +171,31 @@ async def create_bucket(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear el bucket: {e}")
 
-@app.get("/buckets/{bucket_name}")
+@app.get(
+    "/buckets/{bucket_name}",
+    tags=["Buckets"],
+    summary="Obtener detalles de un bucket",
+    description="Consulta la información detallada, metadatos y cantidad de chunks de un bucket por su nombre."
+)
 async def get_bucket(
     bucket_name: str,
     milvus_client: Async_Milvus_Client = Depends(get_milvus_client)
 ):
-    """Obtiene los detalles y metadatos de un bucket específico."""
     bucket_info = await milvus_client.get_bucket(bucket_name)
     if not bucket_info:
         raise HTTPException(status_code=404, detail=f"El bucket '{bucket_name}' no existe.")
     return {"bucket": bucket_info}
 
-@app.delete("/buckets/{bucket_name}")
+@app.delete(
+    "/buckets/{bucket_name}",
+    tags=["Buckets"],
+    summary="Eliminar un bucket",
+    description="Elimina la colección física en Milvus y su registro de metadatos. El bucket por defecto 'general' está protegido."
+)
 async def delete_bucket(
     bucket_name: str,
     milvus_client: Async_Milvus_Client = Depends(get_milvus_client)
 ):
-    """Elimina un bucket y toda la información almacenada en su colección vectorial."""
     try:
         await milvus_client.delete_bucket(bucket_name)
         return {"message": f"Bucket '{bucket_name}' eliminado exitosamente."}
@@ -148,15 +208,19 @@ async def delete_bucket(
 # Endpoints de Ingesta y Consulta
 # ==============================================================================
 
-@app.post("/upload-file")
+@app.post(
+    "/upload-file",
+    tags=["Ingesta"],
+    summary="Subir e indexar un documento PDF en un bucket",
+    description="Recibe un archivo PDF, divide su contenido en fragmentos textuales, genera sus embeddings vectoriales y los almacena en el bucket seleccionado."
+)
 async def upload_file(
-    file: UploadFile = File(...),
-    bucket_name: str = Form("general"),
-    content_type: Optional[str] = Form(None),
+    file: UploadFile = File(..., description="Archivo PDF para procesar e indexar"),
+    bucket_name: str = Form("general", description="Bucket de destino para almacenar el documento"),
+    content_type: Optional[str] = Form(None, description="Tipo de contenido opcional (si se omite, hereda el del bucket)"),
     milvus_client: Async_Milvus_Client = Depends(get_milvus_client),
     embedding_generator: EmbeddingGenerator = Depends(get_embedding_generator)
 ):
-    """Sube y procesa un documento PDF en el bucket indicado."""
     if not file.filename.lower().endswith(".pdf") or file.content_type != "application/pdf":
         raise HTTPException(status_code=415, detail="Solo se admiten archivos PDF.")
 
@@ -236,14 +300,18 @@ async def upload_file(
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)
 
-@app.post("/get-document")
+@app.post(
+    "/get-document",
+    tags=["RAG & Búsqueda"],
+    summary="Búsqueda vectorial semántica en un bucket",
+    description="Calcula el embedding de la consulta, recupera los fragmentos más cercanos en el bucket y aplica reranker si está disponible."
+)
 async def get_document_endpoint(
     request: QueryRequest,
     milvus_client: Async_Milvus_Client = Depends(get_milvus_client),
     embedding_generator: EmbeddingGenerator = Depends(get_embedding_generator),
     reranker: Reranker = Depends(get_reranker)
 ):
-    """Busca fragmentos semánticamente similares dentro del bucket solicitado."""
     target_bucket = request.bucket_name.strip() if request.bucket_name else "general"
 
     if not await milvus_client.bucket_exists(target_bucket):
@@ -272,14 +340,18 @@ async def get_document_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error durante la búsqueda: {e}")
 
-@app.post("/generarRespuesta")
+@app.post(
+    "/generarRespuesta",
+    tags=["RAG & Búsqueda"],
+    summary="Generar respuesta RAG evaluada sobre un bucket",
+    description="Ejecuta el grafo LangGraph (EvaluatorGraph): recupera contexto del bucket, genera respuesta y la somete a evaluación del juez para evitar alucinaciones."
+)
 async def generar_respuesta_endpoint(
     request: QueryRequest,
     milvus_client: Async_Milvus_Client = Depends(get_milvus_client),
     embedding_generator: EmbeddingGenerator = Depends(get_embedding_generator),
     reranker: Reranker = Depends(get_reranker)
 ):
-    """Ejecuta el grafo evaluador RAG sobre el bucket especificado."""
     target_bucket = request.bucket_name.strip() if request.bucket_name else "general"
 
     if not await milvus_client.bucket_exists(target_bucket):

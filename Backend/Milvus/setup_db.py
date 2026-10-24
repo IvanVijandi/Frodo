@@ -73,11 +73,28 @@ def setup_registry(client: MilvusClient):
         reg_schema.add_field(field_name="created_at", datatype=DataType.VARCHAR, max_length=64)
         reg_schema.add_field(field_name="metadata", datatype=DataType.JSON)
 
+        index_params = client.prepare_index_params()
+        index_params.add_index(
+            field_name="bucket_name",
+            index_type="INVERTED"
+        )
+
         client.create_collection(
             collection_name=REGISTRY_COLLECTION,
-            schema=reg_schema
+            schema=reg_schema,
+            index_params=index_params
         )
         print(f"Colección de registro '{REGISTRY_COLLECTION}' creada exitosamente.")
+    else:
+        try:
+            index_params = client.prepare_index_params()
+            index_params.add_index(
+                field_name="bucket_name",
+                index_type="INVERTED"
+            )
+            client.create_index(REGISTRY_COLLECTION, index_params)
+        except Exception:
+            pass
     
     try:
         client.load_collection(collection_name=REGISTRY_COLLECTION)
@@ -105,18 +122,21 @@ def setup_database():
     Inicializa la base de datos 'MARIA', el registro de buckets y el bucket por defecto 'general'.
     """
     print(f"Conectando a Milvus en {conf.MILVUS_URI}...")
-    client = MilvusClient(uri=conf.MILVUS_URI)
+    init_client = MilvusClient(uri=conf.MILVUS_URI)
 
     # 1. Asegurar base de datos
-    databases = client.list_databases()
+    databases = init_client.list_databases()
     if "MARIA" not in databases:
         print("Creando base de datos 'MARIA'...")
-        client.create_database("MARIA")
+        init_client.create_database("MARIA")
         print("Base de datos 'MARIA' creada exitosamente.")
     else:
         print("La base de datos 'MARIA' ya existe.")
 
-    client.using_database("MARIA")
+    init_client.close()
+
+    # Conectar directamente con db_name="MARIA"
+    client = MilvusClient(uri=conf.MILVUS_URI, db_name="MARIA")
 
     # 2. Asegurar colección de registro
     setup_registry(client)
