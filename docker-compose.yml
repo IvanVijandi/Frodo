@@ -1,4 +1,4 @@
-services: ##Levanta ollama en un contenedor de Docker
+services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -68,13 +68,15 @@ services: ##Levanta ollama en un contenedor de Docker
 
   backend:
     container_name: maria-backend
-    build: .
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
     volumes:
-      - .:/app
+      - ./Backend:/app
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - ./Backend/.env
     environment:
       MILVUS_URI: http://milvus-standalone:19530
       OLLAMA_URI: http://ollama:11434
@@ -82,8 +84,20 @@ services: ##Levanta ollama en un contenedor de Docker
       - "standalone"
       - "ollama"
 
+  frontend:
+    container_name: maria-frontend
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - "backend"
+    restart: unless-stopped
+
 volumes:
   ollama_data:
   etcd_data:
   minio_data:
   milvus_data:
+
