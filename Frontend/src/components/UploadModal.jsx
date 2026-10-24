@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, FolderKanban, Plus } from 'lucide-react';
 import { api } from '../services/api';
-import { GeminiSparkle } from './GeminiSparkle';
+import { MariaVectorLogo } from './MariaVectorLogo';
 
 export function UploadModal({
   isOpen,
@@ -115,10 +115,9 @@ export function UploadModal({
         {/* Header */}
         <div className="gemini-modal-header">
           <div className="gemini-modal-title-group">
-            <GeminiSparkle size={22} />
+            <MariaVectorLogo size={22} />
             <div>
               <h3>Cargar Documento PDF</h3>
-              <p className="gemini-modal-sub">Alimenta la base de conocimiento vectorial de MARIA</p>
             </div>
           </div>
           <button className="gemini-icon-btn" onClick={handleClose} type="button">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { marked } from 'marked';
-import { User, Copy, Check, Sparkles } from 'lucide-react';
-import { GeminiSparkle } from './GeminiSparkle';
+import { Copy, Check } from 'lucide-react';
+import { MariaVectorLogo } from './MariaVectorLogo';
 
 marked.setOptions({
   breaks: true,
@@ -22,19 +22,19 @@ export function MessageItem({ message }) {
     if (isAssistant) {
       const htmlContent = marked.parse(message.text || '');
       return (
-        <div className="gemini-markdown-body">
+        <div className="maria-markdown-body">
           <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
-          {message.isStreaming && <span className="gemini-cursor-blink">▍</span>}
+          {message.isStreaming && <span className="maria-cursor">▍</span>}
         </div>
       );
     }
-    return <div className="gemini-user-text">{message.text}</div>;
+    return <div className="maria-user-text">{message.text}</div>;
   };
 
   if (!isAssistant) {
     return (
-      <div className="gemini-message-row user-row">
-        <div className="gemini-user-bubble">
+      <div className="maria-message-row user-row">
+        <div className="maria-user-bubble">
           {renderContent()}
         </div>
       </div>
@@ -42,48 +42,38 @@ export function MessageItem({ message }) {
   }
 
   return (
-    <div className="gemini-message-row assistant-row">
-      <div className="gemini-avatar-wrapper">
-        <GeminiSparkle size={26} />
+    <div className="maria-message-row assistant-row">
+      <div className="maria-avatar-bubble">
+        <MariaVectorLogo size={20} />
       </div>
 
-      <div className="gemini-response-container">
-        <div className="gemini-response-content">
+      <div className="maria-assistant-container">
+        <div className="maria-assistant-content">
           {renderContent()}
         </div>
 
-        <div className="gemini-response-actions">
+        <div className="maria-message-footer">
           <button
             onClick={handleCopy}
-            className="gemini-action-btn"
+            className="maria-copy-btn"
             title="Copiar respuesta"
             type="button"
           >
             {copied ? (
               <>
-                <Check size={14} className="text-success" />
+                <Check size={13} className="text-emerald" />
                 <span>Copiado</span>
               </>
             ) : (
               <>
-                <Copy size={14} />
+                <Copy size={13} />
                 <span>Copiar</span>
               </>
             )}
           </button>
-
-          <span className="gemini-rag-badge">
-            <Sparkles size={11} />
-            <span>Fundamentado con RAG</span>
-          </span>
-
-          {message.iteration !== undefined && message.iteration > 0 && (
-            <span className="gemini-iteration-badge">
-              {message.iteration} {message.iteration === 1 ? 'iteración' : 'iteraciones'}
-            </span>
+          {message.timestamp && (
+            <span className="maria-timestamp">{message.timestamp}</span>
           )}
-
-          <span className="gemini-time-badge">{message.timestamp}</span>
         </div>
       </div>
     </div>

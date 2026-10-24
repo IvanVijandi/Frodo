@@ -131,8 +131,7 @@ export function BucketManagerModal({
               <FolderKanban size={22} />
             </div>
             <div>
-              <h3>Administrar Buckets de Información</h3>
-              <p className="gemini-modal-sub">Colecciones vectoriales temáticas en Milvus</p>
+              <h3>Administrar Buckets</h3>
             </div>
           </div>
           <button className="gemini-icon-btn" onClick={handleClose} type="button">

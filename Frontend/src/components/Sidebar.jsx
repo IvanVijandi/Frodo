@@ -1,5 +1,17 @@
-import React from 'react';
-import { Plus, MessageSquare, Trash2, FileUp, FolderKanban, Settings2, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Plus,
+  MessageSquare,
+  Trash2,
+  FileUp,
+  FolderKanban,
+  Settings2,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Database
+} from 'lucide-react';
+import { MariaVectorLogo } from './MariaVectorLogo';
 
 export function Sidebar({
   conversations,
@@ -13,92 +25,126 @@ export function Sidebar({
   onSelectBucket,
   onOpenBucketManager,
 }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <aside className="gemini-sidebar">
-      {/* Header con título MARIA */}
-      <div className="gemini-sidebar-top">
-        <div className="gemini-logo-row">
-          <span className="gemini-logo-text">MARIA</span>
+    <aside className="maria-sidebar">
+      {/* Header: Solo MARIA sin leyendas */}
+      <div className="maria-sidebar-header">
+        <div className="maria-brand">
+          <MariaVectorLogo size={22} />
+          <span className="maria-brand-title">MARIA</span>
         </div>
       </div>
 
-      {/* Botón "+ Nuevo chat" estilo píldora */}
-      <div className="gemini-sidebar-actions">
+      {/* Botón "+ Nuevo chat" */}
+      <div className="maria-sidebar-action">
         <button
-          className="gemini-new-chat-pill"
+          className="maria-new-chat-btn"
           onClick={onCreateConversation}
           type="button"
         >
-          <Plus size={18} />
+          <Plus size={16} className="text-emerald" />
           <span>Nuevo chat</span>
         </button>
       </div>
 
-      {/* Sección de Buckets de Conocimiento */}
-      <div className="gemini-sidebar-section buckets-section">
-        <div className="gemini-section-header-row">
-          <span className="gemini-section-header">Buckets</span>
-          <button
-            className="gemini-section-action-btn"
-            onClick={onOpenBucketManager}
-            title="Administrar buckets"
-            type="button"
-          >
-            <Settings2 size={14} />
-          </button>
+      {/* Sección Limpia de Buckets con Botón de Despliegue */}
+      <div className="maria-buckets-panel">
+        <div className="maria-buckets-header">
+          <div className="maria-buckets-title">
+            <Database size={15} className="text-emerald" />
+            <span>Buckets</span>
+          </div>
+
+          <div className="maria-buckets-controls">
+            <button
+              type="button"
+              className="maria-btn-toggle"
+              onClick={() => setIsExpanded(!isExpanded)}
+              title={isExpanded ? "Plegar sección" : "Desplegar buckets"}
+            >
+              <span>{isExpanded ? "Plegar" : "Ver info"}</span>
+              {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            </button>
+
+            <button
+              type="button"
+              className="maria-icon-btn-ghost"
+              onClick={onOpenBucketManager}
+              title="Administrar buckets"
+            >
+              <Settings2 size={14} />
+            </button>
+          </div>
         </div>
 
-        <div className="gemini-buckets-mini-list">
-          {buckets.map((b) => {
-            const isActive = b.name === activeBucket;
-            return (
-              <div
-                key={b.name}
-                className={`gemini-bucket-mini-item ${isActive ? 'active' : ''}`}
-                onClick={() => onSelectBucket && onSelectBucket(b.name)}
-                title={`Bucket: ${b.name} (${b.content_type || 'general'})`}
-              >
-                <FolderKanban size={15} className="bucket-mini-icon" />
-                <span className="bucket-mini-name">{b.name}</span>
-                <span className="bucket-mini-type">{b.content_type || 'gen'}</span>
-                {isActive && <Check size={13} className="bucket-mini-check" />}
-              </div>
-            );
-          })}
-        </div>
-
-        <button
-          type="button"
-          className="btn-manage-buckets-sidebar"
-          onClick={onOpenBucketManager}
+        {/* Bucket Activo (siempre visible, limpio) */}
+        <div
+          className="maria-active-bucket-row"
+          onClick={() => setIsExpanded(!isExpanded)}
+          title="Bucket activo actualmente"
         >
-          <Plus size={13} />
-          <span>Administrar o crear buckets</span>
-        </button>
+          <span className="maria-status-dot-emerald"></span>
+          <span className="maria-active-bucket-name">{activeBucket}</span>
+          <span className="maria-active-tag">Activo</span>
+        </div>
+
+        {/* Lista Desplegable Simple y Limpia */}
+        {isExpanded && (
+          <div className="maria-buckets-dropdown">
+            <div className="maria-buckets-list">
+              {buckets.map((b) => {
+                const isActive = b.name === activeBucket;
+                return (
+                  <div
+                    key={b.name}
+                    className={`maria-bucket-item ${isActive ? 'is-active' : ''}`}
+                    onClick={() => onSelectBucket && onSelectBucket(b.name)}
+                    title={`Seleccionar bucket ${b.name}`}
+                  >
+                    <FolderKanban size={14} className={isActive ? 'text-emerald' : 'text-muted'} />
+                    <span className="maria-bucket-name">{b.name}</span>
+                    {isActive && <Check size={13} className="text-emerald maria-bucket-check" />}
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              className="maria-manage-buckets-link"
+              onClick={onOpenBucketManager}
+            >
+              <Settings2 size={13} />
+              <span>Administrar buckets</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Sección de Recientes */}
-      <div className="gemini-sidebar-section history-section">
-        <span className="gemini-section-header">Recientes</span>
-        <div className="gemini-history-list">
+      {/* Historial de Chats Recientes */}
+      <div className="maria-history-section">
+        <span className="maria-history-heading">Recientes</span>
+        <div className="maria-history-list">
           {conversations.length === 0 ? (
-            <p className="gemini-empty-history">Sin conversaciones recientes</p>
+            <p className="maria-empty-text">Sin conversaciones recientes</p>
           ) : (
             conversations.map((conv) => {
               const isActive = conv.id === activeId;
               return (
                 <div
                   key={conv.id}
-                  className={`gemini-history-item ${isActive ? 'active' : ''}`}
+                  className={`maria-history-item ${isActive ? 'active' : ''}`}
                   onClick={() => onSelectConversation(conv.id)}
                 >
-                  <MessageSquare size={16} className="history-icon" />
-                  <span className="history-title" title={conv.title}>
+                  <MessageSquare size={14} className="maria-history-icon" />
+                  <span className="maria-history-title" title={conv.title}>
                     {conv.title}
                   </span>
                   <button
                     type="button"
-                    className="history-delete-btn"
+                    className="maria-history-del"
                     title="Eliminar chat"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -114,21 +160,16 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Footer con subida de PDF y estado de Milvus */}
-      <div className="gemini-sidebar-footer">
+      {/* Footer Limpio */}
+      <div className="maria-sidebar-footer">
         <button
-          className="gemini-footer-btn"
+          className="maria-upload-btn"
           onClick={onOpenUploadModal}
           type="button"
         >
-          <FileUp size={16} />
-          <span>Cargar documento PDF</span>
+          <FileUp size={15} className="text-emerald" />
+          <span>Cargar PDF</span>
         </button>
-
-        <div className="gemini-status-tag">
-          <span className="gemini-status-dot"></span>
-          <span>Milvus & Ollama RAG</span>
-        </div>
       </div>
     </aside>
   );
