@@ -2,11 +2,16 @@ from typing import TypedDict, Literal, Optional
 from pydantic import BaseModel, Field
 from langgraph.graph import StateGraph, START, END
 from langchain_google_genai import ChatGoogleGenerativeAI
-from config import conf
+
+try:
+    from config import conf
+except ModuleNotFoundError:
+    from Backend.config import conf
 
 # Definición del estado del grafo
 class State(TypedDict):
     query: str
+    bucket_name: Optional[str]
     context: str
     response: str
     feedback: str
@@ -65,22 +70,29 @@ class EvaluatorGraph:
     async def retrieve_and_generate(self, state: State):
         query = state["query"]
         iteration = state.get("iteration", 0)
+        bucket = state.get("bucket_name") or "general"
         
-        # En la primera iteración realizamos la búsqueda en Milvus
+        # En la primera iteración realizamos la búsqueda en Milvus en el bucket especificado
         if iteration == 0:
             query_vector = await self.embedding_generator.get_query_embedding(query)
             results = await self.milvus_client.get_document(
                 query_vector=query_vector,
-                collection_name="documentos"
+                collection_name=bucket
             )
             
-            if self.reranker and len(results) > 0:
+            if self.reranker and len(results) > 0 and results[0]:
                 final_results = self.reranker.rerank(query, results)
             else:
                 final_results = results
                 
             # Combinar todos los chunks en un solo texto de contexto
-            context = "\n\n".join([hit['entity']['text_chunk'] for hit in final_results])
+            context_chunks = []
+            for hit in final_results:
+                entity = hit.get('entity', {}) if isinstance(hit, dict) else getattr(hit, 'entity', {})
+                text = entity.get('text') or entity.get('text_chunk', '')
+                if text:
+                    context_chunks.append(text)
+            context = "\n\n".join(context_chunks)
         else:
             # En iteraciones posteriores usamos el contexto que ya buscamos
             context = state["context"]
@@ -132,11 +144,9 @@ RESPUESTA A EVALUAR:
         if state["eval_status"] == "accepted":
             return "Accepted"
         elif state["iteration"] >= 2:
-            # Máximo 2 intentos (0 y 1). Al llegar a 2 iteraciones cortamos.
             return "Max Iterations Reached"
         else:
             return "Rejected + Feedback"
 
     def fallback_response(self, state: State):
-        # Si luego de múltiples intentos el evaluador no aprueba, devolvemos un mensaje seguro.
         return {"response": "No se cuenta con la información necesaria en el contexto para responder la pregunta de forma fiable."}

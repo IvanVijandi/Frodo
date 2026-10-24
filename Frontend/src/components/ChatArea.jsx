@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Sparkles, Loader2, FileText, Search, BookOpen, UploadCloud } from 'lucide-react';
+import { Send, Paperclip, Sparkles, Loader2, FileText, Search, BookOpen, UploadCloud, FolderKanban } from 'lucide-react';
 import { MessageItem } from './MessageItem';
 import { GeminiSparkle } from './GeminiSparkle';
 
@@ -8,10 +8,15 @@ export function ChatArea({
   onSendMessage,
   isLoading,
   onOpenUploadModal,
+  activeBucket = 'general',
+  buckets = [],
+  onOpenBucketManager,
 }) {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const currentBucketInfo = buckets.find((b) => b.name === activeBucket);
 
   // Auto-scroll al final
   useEffect(() => {
@@ -60,8 +65,21 @@ export function ChatArea({
         <div className="gemini-header-left">
           <div className="gemini-brand-title">
             <span className="gemini-brand-name">{conversation?.title || 'Conversación'}</span>
-            <span className="gemini-version-pill">RAG Activo</span>
           </div>
+
+          {/* Selector de Bucket Activo */}
+          <button
+            className="gemini-active-bucket-pill"
+            onClick={onOpenBucketManager}
+            title="Haga clic para cambiar o administrar buckets"
+            type="button"
+          >
+            <FolderKanban size={13} />
+            <span>Bucket: <strong>{activeBucket}</strong></span>
+            {currentBucketInfo?.content_type && (
+              <span className="pill-type">{currentBucketInfo.content_type}</span>
+            )}
+          </button>
         </div>
 
         <div className="gemini-header-right">
@@ -84,15 +102,22 @@ export function ChatArea({
             <div className="gemini-welcome-hero">
               <div className="gemini-greeting">
                 <h1 className="gemini-gradient-text">Hola,</h1>
-                <h2 className="gemini-greeting-sub">¿En qué puedo ayudarte hoy con tus PDFs?</h2>
+                <h2 className="gemini-greeting-sub">¿En qué puedo ayudarte hoy con tus documentos?</h2>
+                <div className="gemini-welcome-bucket-info">
+                  <FolderKanban size={15} />
+                  <span>
+                    Consultando bucket <strong>{activeBucket}</strong> (tipo:{' '}
+                    <em>{currentBucketInfo?.content_type || 'general'}</em>)
+                  </span>
+                </div>
               </div>
 
               <div className="gemini-cards-grid">
                 <div
                   className="gemini-prompt-card"
-                  onClick={() => handleSuggestionClick('Haz un resumen estructurado con los puntos clave del documento cargado')}
+                  onClick={() => handleSuggestionClick(`Haz un resumen estructurado con los puntos clave del bucket ${activeBucket}`)}
                 >
-                  <p className="card-text">Resumir el documento principal con sus puntos más relevantes</p>
+                  <p className="card-text">Resumir la información disponible en el bucket <strong>{activeBucket}</strong></p>
                   <div className="card-icon-circle">
                     <BookOpen size={18} />
                   </div>
@@ -100,9 +125,9 @@ export function ChatArea({
 
                 <div
                   className="gemini-prompt-card"
-                  onClick={() => handleSuggestionClick('¿Qué documentos o prestaciones se encuentran indexados en la base de datos?')}
+                  onClick={() => handleSuggestionClick(`¿Qué temas o documentos específicos se encuentran en el bucket ${activeBucket}?`)}
                 >
-                  <p className="card-text">Explorar qué información o documentos están indexados</p>
+                  <p className="card-text">Explorar documentos y temas indexados en este bucket</p>
                   <div className="card-icon-circle">
                     <Search size={18} />
                   </div>
@@ -122,7 +147,7 @@ export function ChatArea({
                   className="gemini-prompt-card action-card"
                   onClick={onOpenUploadModal}
                 >
-                  <p className="card-text">Cargar un nuevo archivo PDF para consultar</p>
+                  <p className="card-text">Cargar un nuevo PDF en el bucket <strong>{activeBucket}</strong></p>
                   <div className="card-icon-circle accent">
                     <UploadCloud size={18} />
                   </div>
@@ -149,7 +174,7 @@ export function ChatArea({
                 <div className="gemini-shimmer-line line-2"></div>
                 <div className="gemini-shimmer-line line-3"></div>
                 <span className="gemini-thinking-label">
-                  Consultando base vectorial y generando respuesta...
+                  Buscando en bucket <strong>{activeBucket}</strong> y generando respuesta...
                 </span>
               </div>
             </div>
@@ -167,7 +192,7 @@ export function ChatArea({
               type="button"
               className="gemini-attach-btn"
               onClick={onOpenUploadModal}
-              title="Adjuntar documento PDF"
+              title={`Adjuntar PDF al bucket ${activeBucket}`}
             >
               <Paperclip size={19} />
             </button>
@@ -175,7 +200,7 @@ export function ChatArea({
             <textarea
               ref={textareaRef}
               className="gemini-textarea"
-              placeholder="Haz una pregunta sobre tus documentos PDF..."
+              placeholder={`Pregunta algo sobre el bucket '${activeBucket}'...`}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -198,7 +223,7 @@ export function ChatArea({
           </form>
 
           <p className="gemini-disclaimer">
-            MARIA puede cometer errores. Verifica la información importante con los documentos originales.
+            MARIA RAG consulta el bucket <strong>{activeBucket}</strong>. Verifica la información importante con los documentos originales.
           </p>
         </div>
       </div>

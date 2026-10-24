@@ -1,35 +1,57 @@
-from config import conf
+import os
+import sys
+
+try:
+    from config import conf
+except ModuleNotFoundError:
+    from Backend.config import conf
+
 from langchain_ollama import OllamaEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-
-
 
 class EmbeddingGenerator:
     def __init__(self):
         provider = conf.EMBEDDING_PROVIDER.lower()
-        self.model = GoogleGenerativeAIEmbeddings(api_key=conf.GEMINI_API_KEY, model = "gemini-embedding-001", output_dimensionality = 768, task_type = "RETRIEVAL_DOCUMENT")
+        if provider == "google" or conf.GEMINI_API_KEY:
+            self.model = GoogleGenerativeAIEmbeddings(
+                api_key=conf.GEMINI_API_KEY,
+                model="gemini-embedding-001",
+                output_dimensionality=768,
+                task_type="RETRIEVAL_DOCUMENT"
+            )
+        else:
+            self.model = OllamaEmbeddings(
+                base_url=conf.OLLAMA_URI,
+                model="nomic-embed-text"
+            )
 
     async def get_document_embedding(self, text: list[str]) -> list[list[float]]:
-        """Genera embeddings para una lista de textos (documentos)"""
-        """Un embedding por string en la lista"""
-        return await self.model.aembed_documents(texts=text)  ##La dimension depende del modelo
+        """Genera embeddings para una lista de textos (documentos)."""
+        return await self.model.aembed_documents(texts=text)
 
     async def get_query_embedding(self, text: str) -> list[float]:
+        """Genera un vector embedding para una consulta de búsqueda."""
         return await self.model.aembed_query(text=text)
 
-    ##A chequear
-    def format_database(self, text_chunks: list[dict], vector_chunks: list[list[float]], prestacion: str = "default") -> list[dict]:
+    def format_database(
+        self,
+        text_chunks: list[dict],
+        vector_chunks: list[list[float]],
+        content_type: str = "general"
+    ) -> list[dict]:
         """
-        Formatea los chunks de texto y sus embeddings en una lista de diccionarios para insertar en la base de datos.
+        Formatea los chunks de texto y sus embeddings para insertar en la colección de Milvus.
+        Asigna el tipo de contenido y metadatos asociados.
         """
         formatted_data = []
 
-        for i, j in zip(text_chunks, vector_chunks):
+        for doc, vector in zip(text_chunks, vector_chunks):
             data = {
-                "text_chunk": i['text'],
-                "metadata": i['metadata'],
-                "vector_chunk": j,
-                "prestacion": prestacion
+                "text": doc['text'],
+                "vector": vector,
+                "source_file": doc.get('metadata', {}).get('source_file', ''),
+                "content_type": content_type or "general",
+                "metadata": doc.get('metadata', {})
             }
             formatted_data.append(data)
 

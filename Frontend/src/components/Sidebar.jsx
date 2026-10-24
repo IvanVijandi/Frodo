@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, MessageSquare, Trash2, FileUp } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, FileUp, FolderKanban, Settings2, Check } from 'lucide-react';
 
 export function Sidebar({
   conversations,
@@ -8,6 +8,10 @@ export function Sidebar({
   onCreateConversation,
   onDeleteConversation,
   onOpenUploadModal,
+  buckets = [],
+  activeBucket = 'general',
+  onSelectBucket,
+  onOpenBucketManager,
 }) {
   return (
     <aside className="gemini-sidebar">
@@ -30,8 +34,51 @@ export function Sidebar({
         </button>
       </div>
 
+      {/* Sección de Buckets de Conocimiento */}
+      <div className="gemini-sidebar-section buckets-section">
+        <div className="gemini-section-header-row">
+          <span className="gemini-section-header">Buckets</span>
+          <button
+            className="gemini-section-action-btn"
+            onClick={onOpenBucketManager}
+            title="Administrar buckets"
+            type="button"
+          >
+            <Settings2 size={14} />
+          </button>
+        </div>
+
+        <div className="gemini-buckets-mini-list">
+          {buckets.map((b) => {
+            const isActive = b.name === activeBucket;
+            return (
+              <div
+                key={b.name}
+                className={`gemini-bucket-mini-item ${isActive ? 'active' : ''}`}
+                onClick={() => onSelectBucket && onSelectBucket(b.name)}
+                title={`Bucket: ${b.name} (${b.content_type || 'general'})`}
+              >
+                <FolderKanban size={15} className="bucket-mini-icon" />
+                <span className="bucket-mini-name">{b.name}</span>
+                <span className="bucket-mini-type">{b.content_type || 'gen'}</span>
+                {isActive && <Check size={13} className="bucket-mini-check" />}
+              </div>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          className="btn-manage-buckets-sidebar"
+          onClick={onOpenBucketManager}
+        >
+          <Plus size={13} />
+          <span>Administrar o crear buckets</span>
+        </button>
+      </div>
+
       {/* Sección de Recientes */}
-      <div className="gemini-sidebar-section">
+      <div className="gemini-sidebar-section history-section">
         <span className="gemini-section-header">Recientes</span>
         <div className="gemini-history-list">
           {conversations.length === 0 ? (

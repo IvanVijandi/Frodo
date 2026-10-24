@@ -1,15 +1,29 @@
-import React, { useState, useRef } from 'react';
-import { X, UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, FolderKanban, Plus } from 'lucide-react';
 import { api } from '../services/api';
 import { GeminiSparkle } from './GeminiSparkle';
 
-export function UploadModal({ isOpen, onClose, onUploadSuccess }) {
+export function UploadModal({
+  isOpen,
+  onClose,
+  onUploadSuccess,
+  buckets = [],
+  activeBucket = 'general',
+  onOpenBucketManager,
+}) {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedBucket, setSelectedBucket] = useState(activeBucket || 'general');
   const [status, setStatus] = useState('idle'); // 'idle' | 'uploading' | 'success' | 'error'
   const [statusMessage, setStatusMessage] = useState('');
   const [chunksCount, setChunksCount] = useState(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (activeBucket) {
+      setSelectedBucket(activeBucket);
+    }
+  }, [activeBucket, isOpen]);
 
   if (!isOpen) return null;
 
@@ -68,16 +82,16 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }) {
 
     try {
       setStatus('uploading');
-      setStatusMessage('Indexando documento en Milvus...');
+      setStatusMessage(`Indexando documento en el bucket '${selectedBucket}' en Milvus...`);
 
-      const result = await api.uploadPdf(selectedFile);
+      const result = await api.uploadPdf(selectedFile, selectedBucket);
 
       setStatus('success');
       setStatusMessage(result.message || 'Documento indexado con éxito.');
       setChunksCount(result.chunks_procesados);
 
       if (onUploadSuccess) {
-        onUploadSuccess(selectedFile.name, result.chunks_procesados);
+        onUploadSuccess(selectedFile.name, result.chunks_procesados, selectedBucket, result.content_type);
       }
     } catch (err) {
       setStatus('error');
@@ -92,6 +106,8 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+
+  const currentBucketInfo = buckets.find((b) => b.name === selectedBucket);
 
   return (
     <div className="gemini-modal-overlay" onClick={handleClose}>
@@ -112,6 +128,49 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }) {
 
         {/* Body */}
         <div className="gemini-modal-body">
+          {/* Selector de Bucket de destino */}
+          <div className="bucket-selection-group">
+            <div className="bucket-select-header">
+              <label className="field-label">
+                <FolderKanban size={14} />
+                <span>Bucket de Destino</span>
+              </label>
+              {onOpenBucketManager && (
+                <button
+                  type="button"
+                  className="btn-create-bucket-link"
+                  onClick={() => {
+                    handleClose();
+                    onOpenBucketManager();
+                  }}
+                >
+                  <Plus size={12} />
+                  <span>Nuevo bucket</span>
+                </button>
+              )}
+            </div>
+
+            <select
+              className="gemini-select-input"
+              value={selectedBucket}
+              onChange={(e) => setSelectedBucket(e.target.value)}
+              disabled={status === 'uploading'}
+            >
+              {buckets.map((b) => (
+                <option key={b.name} value={b.name}>
+                  {b.name} ({b.content_type || 'general'})
+                </option>
+              ))}
+            </select>
+
+            {currentBucketInfo?.description && (
+              <p className="bucket-selection-hint">
+                {currentBucketInfo.description}
+              </p>
+            )}
+          </div>
+
+          {/* Dropzone */}
           <div
             className={`gemini-dropzone ${dragActive ? 'drag-active' : ''} ${selectedFile ? 'has-file' : ''}`}
             onDragEnter={handleDrag}
@@ -166,7 +225,7 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }) {
             <div className="gemini-feedback-box feedback-loading">
               <Loader2 size={18} className="spinner" />
               <div>
-                <p className="feedback-title">Procesando y generando embeddings...</p>
+                <p className="feedback-title">Indexando en bucket '{selectedBucket}'...</p>
                 <p className="feedback-desc">Dividiendo el texto y almacenando vectores en Milvus.</p>
               </div>
             </div>
@@ -178,7 +237,7 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }) {
               <div>
                 <p className="feedback-title">Documento indexado con éxito</p>
                 <p className="feedback-desc">
-                  Se generaron e insertaron <strong>{chunksCount} fragmentos</strong>. Ya puedes hacerle preguntas en el chat.
+                  Se insertaron <strong>{chunksCount} fragmentos</strong> en el bucket <strong>{selectedBucket}</strong>.
                 </p>
               </div>
             </div>
@@ -218,7 +277,7 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                   <Loader2 size={16} className="spinner" /> Subiendo...
                 </>
               ) : (
-                'Subir e Indexar'
+                `Subir a '${selectedBucket}'`
               )}
             </button>
           )}

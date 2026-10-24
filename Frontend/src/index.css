@@ -33,7 +33,7 @@
   --success: #a8dab5;
   --error: #f28b82;
 
-  --sidebar-width: 260px;
+  --sidebar-width: 270px;
 }
 
 * {
@@ -84,7 +84,7 @@ body {
 .gemini-sidebar-top {
   display: flex;
   align-items: center;
-  padding: 8px 12px 16px;
+  padding: 8px 12px 14px;
 }
 
 .gemini-logo-row {
@@ -100,7 +100,7 @@ body {
 }
 
 .gemini-sidebar-actions {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .gemini-new-chat-pill {
@@ -125,22 +125,139 @@ body {
   border-color: rgba(255, 255, 255, 0.16);
 }
 
+/* Sections inside Sidebar */
 .gemini-sidebar-section {
-  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin-top: 4px;
+  margin-top: 6px;
+}
+
+.gemini-sidebar-section.buckets-section {
+  flex-shrink: 0;
+  max-height: 220px;
+  border-bottom: 1px solid var(--gemini-border);
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+}
+
+.gemini-sidebar-section.history-section {
+  flex: 1;
+}
+
+.gemini-section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 6px;
 }
 
 .gemini-section-header {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--text-muted);
-  padding: 8px 14px 6px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
+.gemini-section-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.gemini-section-action-btn:hover {
+  color: var(--gemini-blue);
+  background-color: var(--gemini-surface-hover);
+}
+
+/* Buckets Mini List in Sidebar */
+.gemini-buckets-mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  max-height: 120px;
+  padding: 2px 0;
+}
+
+.gemini-bucket-mini-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 14px;
+  color: var(--text-sub);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gemini-bucket-mini-item:hover {
+  background-color: var(--gemini-surface-hover);
+  color: var(--text-main);
+}
+
+.gemini-bucket-mini-item.active {
+  background-color: rgba(168, 199, 250, 0.12);
+  color: var(--gemini-blue);
+  font-weight: 500;
+}
+
+.bucket-mini-icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.bucket-mini-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bucket-mini-type {
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+
+.bucket-mini-check {
+  color: var(--gemini-blue);
+  flex-shrink: 0;
+}
+
+.btn-manage-buckets-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px dashed var(--gemini-border);
+  color: var(--text-muted);
+  border-radius: 12px;
+  padding: 5px 10px;
+  margin-top: 6px;
+  font-family: var(--font-family);
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-manage-buckets-sidebar:hover {
+  background-color: var(--gemini-surface-hover);
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* History List */
 .gemini-history-list {
   flex: 1;
   overflow-y: auto;
@@ -150,14 +267,17 @@ body {
   padding-right: 2px;
 }
 
-/* Custom minimal scrollbar */
 .gemini-history-list::-webkit-scrollbar,
-.gemini-scroll-view::-webkit-scrollbar {
+.gemini-scroll-view::-webkit-scrollbar,
+.buckets-list-container::-webkit-scrollbar,
+.gemini-buckets-mini-list::-webkit-scrollbar {
   width: 6px;
 }
 
 .gemini-history-list::-webkit-scrollbar-thumb,
-.gemini-scroll-view::-webkit-scrollbar-thumb {
+.gemini-scroll-view::-webkit-scrollbar-thumb,
+.buckets-list-container::-webkit-scrollbar-thumb,
+.gemini-buckets-mini-list::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
@@ -292,6 +412,7 @@ body {
   align-items: center;
   justify-content: space-between;
   z-index: 10;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .gemini-header-left {
@@ -310,19 +431,44 @@ body {
   font-size: 1.02rem;
   font-weight: 600;
   color: var(--text-main);
-  max-width: 480px;
+  max-width: 320px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.gemini-version-pill {
-  font-size: 0.72rem;
-  font-weight: 500;
+/* Active Bucket Pill in Header */
+.gemini-active-bucket-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background-color: var(--gemini-surface);
+  border: 1px solid var(--gemini-border);
+  color: var(--text-main);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-family: var(--font-family);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gemini-active-bucket-pill:hover {
+  background-color: var(--gemini-surface-hover);
+  border-color: rgba(168, 199, 250, 0.35);
+}
+
+.gemini-active-bucket-pill strong {
   color: var(--gemini-blue);
+  font-weight: 600;
+}
+
+.pill-type {
+  font-size: 0.7rem;
   background-color: rgba(168, 199, 250, 0.1);
-  padding: 2px 8px;
-  border-radius: 12px;
+  color: var(--gemini-blue);
+  padding: 1px 6px;
+  border-radius: 8px;
 }
 
 .gemini-upload-chip-btn {
@@ -351,7 +497,7 @@ body {
 .gemini-scroll-view {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 140px; /* Space for the bottom floating input capsule */
+  padding-bottom: 140px;
 }
 
 .gemini-content-container {
@@ -361,17 +507,17 @@ body {
 }
 
 /* ==========================================================================
-   Gemini Welcome Screen (Hero Greeting)
+   Gemini Welcome Screen
    ========================================================================== */
 
 .gemini-welcome-hero {
-  margin-top: 8vh;
+  margin-top: 6vh;
   display: flex;
   flex-direction: column;
 }
 
 .gemini-greeting {
-  margin-bottom: 48px;
+  margin-bottom: 36px;
 }
 
 .gemini-gradient-text {
@@ -393,6 +539,23 @@ body {
   letter-spacing: -0.01em;
 }
 
+.gemini-welcome-bucket-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 6px 14px;
+  background-color: var(--gemini-surface);
+  border: 1px solid var(--gemini-border);
+  border-radius: 16px;
+  font-size: 0.82rem;
+  color: var(--text-sub);
+}
+
+.gemini-welcome-bucket-info strong {
+  color: var(--gemini-blue);
+}
+
 .gemini-cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -400,7 +563,7 @@ body {
 }
 
 .gemini-prompt-card {
-  height: 140px;
+  height: 135px;
   background-color: var(--gemini-card-bg);
   border: 1px solid transparent;
   border-radius: 16px;
@@ -509,7 +672,6 @@ body {
   word-break: break-word;
 }
 
-/* Markdown Styling inside Gemini Response */
 .gemini-markdown-body p {
   margin-bottom: 1em;
 }
@@ -556,7 +718,6 @@ body {
   font-weight: 600;
 }
 
-/* Actions footer under assistant response */
 .gemini-response-actions {
   display: flex;
   align-items: center;
@@ -618,10 +779,7 @@ body {
   color: var(--gemini-blue);
 }
 
-/* ==========================================================================
-   Thinking / Shimmer Animation (Gemini Signature)
-   ========================================================================== */
-
+/* Thinking Indicator */
 .gemini-thinking-row {
   margin-top: 8px;
 }
@@ -668,7 +826,7 @@ body {
 }
 
 /* ==========================================================================
-   Bottom Floating Input Capsule (Gemini Style)
+   Bottom Floating Input Capsule
    ========================================================================== */
 
 .gemini-input-anchor {
@@ -777,7 +935,7 @@ body {
 }
 
 /* ==========================================================================
-   Gemini Material 3 Modal
+   Gemini Material 3 Modal Base
    ========================================================================== */
 
 .gemini-modal-overlay {
@@ -868,11 +1026,349 @@ body {
   gap: 16px;
 }
 
-/* Dropzone */
+/* ==========================================================================
+   Bucket Manager Specific Styles
+   ========================================================================== */
+
+.bucket-manager-modal {
+  max-width: 660px;
+}
+
+.bucket-icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background-color: rgba(168, 199, 250, 0.12);
+  color: var(--gemini-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bucket-tabs-nav {
+  display: flex;
+  gap: 8px;
+  padding: 0 24px 14px;
+  border-bottom: 1px solid var(--gemini-border);
+}
+
+.bucket-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 7px 16px;
+  border-radius: 20px;
+  font-family: var(--font-family);
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bucket-tab-btn:hover {
+  background-color: var(--gemini-surface-hover);
+  color: var(--text-main);
+}
+
+.bucket-tab-btn.active {
+  background-color: rgba(168, 199, 250, 0.15);
+  color: var(--gemini-blue);
+  font-weight: 600;
+}
+
+.bucket-modal-body {
+  max-height: 440px;
+  overflow-y: auto;
+  padding-top: 14px;
+}
+
+.buckets-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bucket-card {
+  background-color: #161617;
+  border: 1px solid var(--gemini-border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bucket-card:hover {
+  background-color: var(--gemini-surface-hover);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.bucket-card-active {
+  border-color: rgba(168, 199, 250, 0.4);
+  background-color: rgba(168, 199, 250, 0.04);
+}
+
+.bucket-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.bucket-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bucket-name {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.bucket-active-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background-color: rgba(168, 199, 250, 0.15);
+  color: var(--gemini-blue);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.bucket-content-type-badge {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background-color: var(--gemini-surface-hover);
+  color: var(--text-sub);
+  border: 1px solid var(--gemini-border);
+}
+
+.bucket-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+.bucket-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.bucket-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.74rem;
+  color: var(--text-dim);
+}
+
+.stats-chunks strong {
+  color: var(--text-sub);
+}
+
+.bucket-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-select-bucket {
+  background-color: var(--gemini-surface-hover);
+  border: 1px solid var(--gemini-border);
+  color: var(--text-main);
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-family: var(--font-family);
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-select-bucket:hover {
+  background-color: var(--gemini-blue-btn);
+  color: var(--gemini-blue-btn-text);
+}
+
+.btn-delete-bucket {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.btn-delete-bucket:hover {
+  color: var(--error);
+  background-color: rgba(242, 139, 130, 0.12);
+}
+
+/* Bucket Creation Form */
+.bucket-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-input, .field-textarea, .gemini-select-input {
+  background-color: #161617;
+  border: 1px solid var(--gemini-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: var(--text-main);
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.field-input:focus, .field-textarea:focus, .gemini-select-input:focus {
+  border-color: var(--gemini-border-focus);
+}
+
+.field-hint {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.preset-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.preset-chip {
+  background-color: #161617;
+  border: 1px solid var(--gemini-border);
+  border-radius: 12px;
+  padding: 8px 10px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.15s ease;
+}
+
+.preset-chip:hover {
+  background-color: var(--gemini-surface-hover);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.preset-chip.preset-active {
+  background-color: rgba(168, 199, 250, 0.12);
+  border-color: var(--gemini-blue);
+}
+
+.preset-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.preset-desc {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.custom-type-input-box {
+  margin-top: 8px;
+}
+
+.create-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.modal-footer-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  color: var(--text-dim);
+}
+
+/* Bucket selection inside UploadModal */
+.bucket-selection-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: #161617;
+  border: 1px solid var(--gemini-border);
+  border-radius: 16px;
+  padding: 12px 16px;
+}
+
+.bucket-select-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-create-bucket-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--gemini-blue);
+  font-family: var(--font-family);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.btn-create-bucket-link:hover {
+  text-decoration: underline;
+}
+
+.gemini-select-input {
+  width: 100%;
+  cursor: pointer;
+  background-color: #1f2022;
+}
+
+.bucket-selection-hint {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+/* Dropzone inside UploadModal */
 .gemini-dropzone {
   border: 2px dashed rgba(255, 255, 255, 0.12);
   border-radius: 20px;
-  padding: 30px 20px;
+  padding: 26px 20px;
   text-align: center;
   cursor: pointer;
   background-color: #161617;
@@ -893,37 +1389,37 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .gemini-dropzone-icon {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background-color: var(--gemini-surface-hover);
   color: var(--gemini-blue);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .gemini-dropzone-inner h4 {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 500;
   color: var(--text-main);
 }
 
 .gemini-dropzone-inner p {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
 .gemini-pdf-badge {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--text-sub);
   background-color: var(--gemini-surface-hover);
-  padding: 3px 10px;
+  padding: 2px 10px;
   border-radius: 12px;
   margin-top: 4px;
 }
@@ -1008,7 +1504,7 @@ body {
   padding: 16px 24px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 12px;
   background-color: #1a1a1c;
 }
@@ -1071,7 +1567,7 @@ body {
 
 @media (max-width: 900px) {
   :root {
-    --sidebar-width: 210px;
+    --sidebar-width: 220px;
   }
 
   .gemini-prompt-card {
@@ -1090,7 +1586,7 @@ body {
 
 @media (max-width: 680px) {
   :root {
-    --sidebar-width: 170px;
+    --sidebar-width: 180px;
   }
 
   .gemini-cards-grid {
