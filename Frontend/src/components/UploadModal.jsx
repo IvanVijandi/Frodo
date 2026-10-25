@@ -115,7 +115,7 @@ export function UploadModal({
         {/* Header */}
         <div className="gemini-modal-header">
           <div className="gemini-modal-title-group">
-            <MariaVectorLogo size={22} />
+            <MariaVectorLogo size={34} />
             <div>
               <h3>Cargar Documento PDF</h3>
             </div>

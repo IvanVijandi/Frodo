@@ -44,7 +44,7 @@ export function MessageItem({ message }) {
   return (
     <div className="maria-message-row assistant-row">
       <div className="maria-avatar-bubble">
-        <MariaVectorLogo size={20} />
+        <MariaVectorLogo size={38} />
       </div>
 
       <div className="maria-assistant-container">

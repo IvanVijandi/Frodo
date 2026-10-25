@@ -19,7 +19,7 @@ export function Sidebar({
 }) {
   return (
     <aside className="maria-sidebar">
-      {/* Header: Logo MARIA + botón para volver a los buckets */}
+      {/* Header: Logo Frodo + botón para volver a los buckets */}
       <div className="maria-sidebar-header">
         <div
           className="maria-brand"
@@ -27,8 +27,8 @@ export function Sidebar({
           style={{ cursor: onBackToHub ? 'pointer' : 'default' }}
           title={onBackToHub ? "Volver a la selección de buckets" : undefined}
         >
-          <MariaVectorLogo size={22} />
-          <span className="maria-brand-title">MARIA</span>
+          <MariaVectorLogo size={42} />
+          <span className="maria-brand-title">Frodo</span>
         </div>
 
         {onBackToHub && (

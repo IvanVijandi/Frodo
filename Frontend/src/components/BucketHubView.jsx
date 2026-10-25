@@ -96,8 +96,8 @@ export function BucketHubView({
       <header className="hub-header">
         <div className="hub-header-inner">
           <div className="hub-brand">
-            <MariaVectorLogo size={24} />
-            <span className="hub-brand-name">MARIA</span>
+            <MariaVectorLogo size={46} />
+            <span className="hub-brand-name">Frodo</span>
           </div>
         </div>
       </header>
@@ -251,7 +251,7 @@ export function BucketHubView({
         {/* Footer Informativo de Seguridad y Contexto */}
         <div className="hub-security-footer">
           <ShieldCheck size={16} className="text-emerald" />
-          <span>MARIA mantiene cada conversación dentro del contexto de su bucket.</span>
+          <span>Frodo mantiene cada conversación dentro del contexto de su bucket.</span>
         </div>
       </main>
     </div>

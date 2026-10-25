@@ -5,6 +5,7 @@
 
 :root {
   --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-brand: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
 
   /* Palette: Blancos y Tonos Claros */
@@ -107,12 +108,20 @@ body {
   gap: 10px;
 }
 
+.frodo-avatar-logo {
+  border-radius: 50%;
+  object-fit: cover;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .maria-brand-title {
   font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text-main);
-  font-family: var(--font-mono);
+  font-family: var(--font-brand);
 }
 
 .maria-sidebar-action {
@@ -500,10 +509,10 @@ body {
 
 .maria-header-title {
   font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text-main);
-  font-family: var(--font-mono);
+  font-family: var(--font-brand);
 }
 
 .maria-header-bucket-badge {
@@ -584,11 +593,11 @@ body {
 
 .maria-hero-name {
   font-size: 2.2rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text-main);
   margin-bottom: 4px;
-  font-family: var(--font-mono);
+  font-family: var(--font-brand);
 }
 
 .maria-hero-subtitle {
@@ -696,16 +705,17 @@ body {
 }
 
 .maria-avatar-bubble {
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background-color: var(--green-light);
-  border: 1px solid var(--green-border);
+  background-color: transparent;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   margin-top: 2px;
+  overflow: hidden;
 }
 
 .maria-assistant-container {
@@ -1351,6 +1361,189 @@ body {
   color: #991B1B;
 }
 
+/* ==========================================================================
+   FORMULARIO DE CREACIÓN DE BUCKET Y ESTILOS DE PRESETS
+   ========================================================================== */
+.bucket-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 6px;
+}
+
+.bucket-create-form .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bucket-create-form .field-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  letter-spacing: 0.02em;
+}
+
+.bucket-create-form .field-input,
+.bucket-create-form .field-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-family: var(--font-family);
+  font-size: 0.88rem;
+  color: var(--text-main);
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.bucket-create-form .field-input:focus,
+.bucket-create-form .field-textarea:focus {
+  border-color: var(--green-vibrant);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+
+.bucket-create-form .field-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.preset-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.preset-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  color: var(--text-main);
+}
+
+.preset-chip:hover {
+  border-color: var(--green-border);
+  background-color: var(--bg-hover);
+}
+
+.preset-chip.preset-active {
+  border-color: var(--green-primary);
+  background-color: var(--green-light);
+  box-shadow: 0 0 0 1px var(--green-primary);
+}
+
+.preset-chip .preset-label {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.preset-chip.preset-active .preset-label {
+  color: var(--green-dark);
+}
+
+.preset-chip .preset-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+.preset-chip.preset-active .preset-desc {
+  color: var(--green-dark);
+  opacity: 0.85;
+}
+
+.custom-type-input-box {
+  margin-top: 8px;
+}
+
+.create-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.gemini-btn-text {
+  background: transparent;
+  border: none;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.gemini-btn-text:hover {
+  color: var(--text-main);
+  background-color: var(--bg-hover);
+}
+
+.gemini-btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background-color: var(--green-vibrant);
+  border: none;
+  border-radius: 20px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gemini-btn-pill:hover:not(:disabled) {
+  background-color: var(--green-primary);
+  transform: translateY(-1px);
+}
+
+.gemini-btn-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gemini-feedback-box .feedback-title {
+  font-weight: 600;
+  font-size: 0.84rem;
+  margin: 0;
+}
+
+.gemini-feedback-box .feedback-desc {
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.spinner, .spin-animation {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
@@ -1386,7 +1579,7 @@ body {
 }
 
 .hub-header {
-  height: 60px;
+  height: 64px;
   border-bottom: 1px solid #E5E7EB;
   background-color: #FFFFFF;
   display: flex;
@@ -1414,10 +1607,10 @@ body {
 }
 
 .hub-brand-name {
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-family: var(--font-brand);
   color: #0F172A;
 }
 

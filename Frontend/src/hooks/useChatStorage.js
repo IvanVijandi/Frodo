@@ -16,7 +16,7 @@ function createNewConversationObject(bucket = 'general', customId = null) {
       {
         id: `msg_welcome_${Date.now()}`,
         role: 'assistant',
-        text: `¡Hola! Soy **MARIA**, tu asistente RAG. Estás en el espacio **${bucketLabel}**. Puedo responder preguntas consultando los documentos indexados en este bucket.`,
+        text: `¡Hola! Soy **Frodo**, tu asistente RAG. Estás en el espacio **${bucketLabel}**. Puedo responder preguntas consultando los documentos indexados en este bucket.`,
         timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ],
@@ -97,7 +97,7 @@ export function useChatStorage(activeBucket = 'general') {
                   {
                     id: `msg_welcome_${s.id}`,
                     role: 'assistant',
-                    text: `¡Hola! Soy **MARIA**, tu asistente RAG. Estás en el espacio **${currentBucketName}**.`,
+                    text: `¡Hola! Soy **Frodo**, tu asistente RAG. Estás en el espacio **${currentBucketName}**.`,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                   },
                 ],

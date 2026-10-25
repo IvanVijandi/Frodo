@@ -70,10 +70,10 @@ export function ChatArea({
             /* Pantalla de Bienvenida Minimalista en Blanco y Verde */
             <div className="maria-hero">
               <div className="maria-hero-icon-wrap">
-                <MariaVectorLogo size={48} />
+                <MariaVectorLogo size={84} />
               </div>
 
-              <h1 className="maria-hero-name">MARIA</h1>
+              <h1 className="maria-hero-name">Frodo</h1>
               <p className="maria-hero-subtitle">¿En qué puedo ayudarte hoy?</p>
 
               <div
@@ -128,7 +128,7 @@ export function ChatArea({
           {isLoading && (
             <div className="maria-message-row assistant-row maria-loading-row">
               <div className="maria-avatar-bubble pulse-animation">
-                <MariaVectorLogo size={18} />
+                <MariaVectorLogo size={38} />
               </div>
               <div className="maria-loading-indicator">
                 <span className="maria-loading-dot"></span>
@@ -164,7 +164,7 @@ export function ChatArea({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={`Pregunta a MARIA sobre el bucket '${activeBucket}'...`}
+              placeholder={`Pregunta a Frodo sobre el bucket '${activeBucket}'...`}
               className="maria-textarea"
               disabled={isLoading}
             />
@@ -180,7 +180,7 @@ export function ChatArea({
           </form>
 
           <div className="maria-disclaimer">
-            <span>MARIA busca contexto en Milvus y responde localmente con Ollama</span>
+            <span>Frodo busca contexto en Milvus y responde localmente con Ollama</span>
           </div>
         </div>
       </div>

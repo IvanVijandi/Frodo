@@ -96,8 +96,8 @@ export function BucketDetailsView({
       <header className="hub-header">
         <div className="hub-header-inner">
           <div className="hub-brand" onClick={onBackToHub} style={{ cursor: 'pointer' }}>
-            <MariaVectorLogo size={24} />
-            <span className="hub-brand-name">MARIA</span>
+            <MariaVectorLogo size={46} />
+            <span className="hub-brand-name">Frodo</span>
           </div>
 
           <button
