@@ -2,12 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Send,
   Paperclip,
-  Database,
   Search,
   BookOpen,
-  FileText,
-  ChevronDown,
-  ArrowLeft
+  FileText
 } from 'lucide-react';
 import { MessageItem } from './MessageItem';
 import { MariaVectorLogo } from './MariaVectorLogo';
@@ -18,9 +15,7 @@ export function ChatArea({
   isLoading,
   onOpenUploadModal,
   activeBucket = 'general',
-  buckets = [],
   onOpenBucketManager,
-  onBackToHub,
 }) {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef(null);
@@ -68,56 +63,6 @@ export function ChatArea({
 
   return (
     <main className="maria-main">
-      {/* Header Limpio con botón para volver a los buckets */}
-      <header className="maria-header">
-        <div className="maria-header-left">
-          {onBackToHub && (
-            <button
-              className="maria-header-back-btn"
-              onClick={onBackToHub}
-              title="Volver a la selección de buckets"
-              type="button"
-            >
-              <ArrowLeft size={15} />
-              <span>Mis buckets</span>
-            </button>
-          )}
-
-          <div
-            className="maria-header-brand"
-            onClick={onBackToHub}
-            style={{ cursor: onBackToHub ? 'pointer' : 'default' }}
-            title={onBackToHub ? "Ir a la vista de buckets" : undefined}
-          >
-            <MariaVectorLogo size={20} />
-            <span className="maria-header-title">MARIA</span>
-          </div>
-
-          {/* Selector de Bucket Activo Simple */}
-          <button
-            className="maria-header-bucket-badge"
-            onClick={onOpenBucketManager}
-            title="Administrar o cambiar bucket"
-            type="button"
-          >
-            <Database size={13} className="text-emerald" />
-            <span>Bucket: <strong>{activeBucket}</strong></span>
-            <ChevronDown size={12} className="text-muted" />
-          </button>
-        </div>
-
-        <div className="maria-header-right">
-          <button
-            className="maria-header-upload-btn"
-            onClick={onOpenUploadModal}
-            type="button"
-          >
-            <Paperclip size={14} className="text-emerald" />
-            <span>Cargar PDF</span>
-          </button>
-        </div>
-      </header>
-
       {/* Área de Mensajes / Contenido */}
       <div className="maria-scroll-container">
         <div className="maria-chat-container">

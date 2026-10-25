@@ -232,9 +232,7 @@ export function App() {
               setIsUploadModalOpen(true);
             }}
             activeBucket={activeBucket}
-            buckets={buckets}
             onOpenBucketManager={() => setIsBucketManagerOpen(true)}
-            onBackToHub={handleBackToHub}
           />
         </>
       )}
