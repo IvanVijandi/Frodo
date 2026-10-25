@@ -16,7 +16,9 @@ dependencies = [
     "python-dotenv",
     "langchain-google-genai",
     "pypdf",
-    "langgraph"
+    "langgraph",
+    "sqlalchemy>=2.0.30",
+    "asyncpg>=0.29.0"
 ]
 
 [build-system]

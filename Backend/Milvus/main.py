@@ -87,6 +87,12 @@ class Async_Milvus_Client:
                 auto_id=True,
                 enable_dynamic_field=True,
             )
+            schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
+            schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=dim)
+            schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=65535)
+            schema.add_field(field_name="source_file", datatype=DataType.VARCHAR, max_length=255)
+            schema.add_field(field_name="content_type", datatype=DataType.VARCHAR, max_length=100)
+            schema.add_field(field_name="metadata", datatype=DataType.JSON)
 
             index_params = self.sync_client.prepare_index_params()
             index_params.add_index(

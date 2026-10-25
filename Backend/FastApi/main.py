@@ -16,12 +16,14 @@ try:
     from Langchain.Reranker import Reranker
     from Milvus.main import Async_Milvus_Client
     from Milvus.setup_db import setup_database
+    from Postgres import init_postgres_db
     from config import conf
 except ModuleNotFoundError:
     from Backend.Langchain.embbedings import EmbeddingGenerator
     from Backend.Langchain.Reranker import Reranker
     from Backend.Milvus.main import Async_Milvus_Client
     from Backend.Milvus.setup_db import setup_database
+    from Backend.Postgres import init_postgres_db
     from Backend.config import conf
 
 from .routers import (
@@ -57,6 +59,12 @@ async def lifespan(app: FastAPI):
         setup_database()
     except Exception as e:
         print(f"Advertencia durante setup_database en Milvus: {e}")
+
+    # Inicializar tablas en PostgreSQL (buckets, conversaciones, mensajes)
+    try:
+        await init_postgres_db()
+    except Exception as e:
+        print(f"Advertencia durante init_postgres_db: {e}")
 
     app.state.reranker = Reranker() if conf.RERANKER_PROVIDER.lower() != "none" else None
     app.state.embedding_generator = EmbeddingGenerator()

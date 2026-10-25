@@ -10,6 +10,14 @@ import { api } from './services/api';
 const ACTIVE_BUCKET_KEY = 'maria_active_bucket_v1';
 
 export function App() {
+  const [activeBucket, setActiveBucket] = useState(() => {
+    try {
+      return localStorage.getItem(ACTIVE_BUCKET_KEY) || 'general';
+    } catch {
+      return 'general';
+    }
+  });
+
   const {
     conversations,
     activeConversation,
@@ -19,7 +27,7 @@ export function App() {
     deleteConversation,
     addMessage,
     updateMessage,
-  } = useChatStorage();
+  } = useChatStorage(activeBucket);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -38,14 +46,6 @@ export function App() {
       total_chunks: 0,
     },
   ]);
-
-  const [activeBucket, setActiveBucket] = useState(() => {
-    try {
-      return localStorage.getItem(ACTIVE_BUCKET_KEY) || 'general';
-    } catch {
-      return 'general';
-    }
-  });
 
   // Cargar lista de buckets desde el backend
   const loadBuckets = useCallback(async () => {

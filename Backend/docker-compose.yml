@@ -65,6 +65,38 @@ services:
     depends_on:
       - "standalone"
 
+  postgres:
+    container_name: maria-postgres
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-maria_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-maria_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-maria_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-maria_user} -d $${POSTGRES_DB:-maria_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    container_name: maria-pgadmin
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   backend:
     container_name: maria-backend
     build: .
@@ -77,9 +109,14 @@ services:
     environment:
       MILVUS_URI: http://standalone:19530
       OLLAMA_URI: ${OLLAMA_URI:-http://host.docker.internal:11434}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://maria_user:maria_pass@postgres:5432/maria_db}
     depends_on:
-      - "standalone"
-      - "ollama"
+      standalone:
+        condition: service_started
+      ollama:
+        condition: service_started
+      postgres:
+        condition: service_healthy
 
   frontend:
     container_name: maria-frontend
@@ -97,3 +134,5 @@ volumes:
   etcd_data:
   minio_data:
   milvus_data:
+  postgres_data:
+  pgadmin_data:

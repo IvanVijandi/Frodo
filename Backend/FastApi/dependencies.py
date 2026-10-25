@@ -5,10 +5,12 @@ try:
     from Langchain.embbedings import EmbeddingGenerator
     from Langchain.Reranker import Reranker
     from Milvus.main import Async_Milvus_Client
+    from Postgres import get_db
 except ModuleNotFoundError:
     from Backend.Langchain.embbedings import EmbeddingGenerator
     from Backend.Langchain.Reranker import Reranker
     from Backend.Milvus.main import Async_Milvus_Client
+    from Backend.Postgres import get_db
 
 from .use_cases.buckets import (
     CreateBucketUseCase,
@@ -40,9 +42,10 @@ def get_reranker(request: Request) -> Optional[Reranker]:
 # ------------------------------------------------------------------------------
 
 def get_create_bucket_use_case(
-    milvus_client: Async_Milvus_Client = Depends(get_milvus_client)
+    milvus_client: Async_Milvus_Client = Depends(get_milvus_client),
+    db = Depends(get_db),
 ) -> CreateBucketUseCase:
-    return CreateBucketUseCase(milvus_client)
+    return CreateBucketUseCase(milvus_client, db)
 
 def get_list_buckets_use_case(
     milvus_client: Async_Milvus_Client = Depends(get_milvus_client)
@@ -55,9 +58,10 @@ def get_get_bucket_use_case(
     return GetBucketUseCase(milvus_client)
 
 def get_delete_bucket_use_case(
-    milvus_client: Async_Milvus_Client = Depends(get_milvus_client)
+    milvus_client: Async_Milvus_Client = Depends(get_milvus_client),
+    db = Depends(get_db),
 ) -> DeleteBucketUseCase:
-    return DeleteBucketUseCase(milvus_client)
+    return DeleteBucketUseCase(milvus_client, db)
 
 def get_ingest_pdf_use_case(
     milvus_client: Async_Milvus_Client = Depends(get_milvus_client),
