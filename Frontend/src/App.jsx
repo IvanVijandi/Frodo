@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
+import { BucketHubView } from './components/BucketHubView';
 import { UploadModal } from './components/UploadModal';
 import { BucketManagerModal } from './components/BucketManagerModal';
 import { useChatStorage } from './hooks/useChatStorage';
@@ -23,6 +24,10 @@ export function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isBucketManagerOpen, setIsBucketManagerOpen] = useState(false);
+
+  // Vista actual: 'hub' (selector inicial de bucket) | 'chat'
+  const [currentView, setCurrentView] = useState('hub');
+  const [uploadTargetBucket, setUploadTargetBucket] = useState('general');
 
   // Estado de Buckets
   const [buckets, setBuckets] = useState([
@@ -61,11 +66,29 @@ export function App() {
   // Persistir activeBucket
   const handleSelectBucket = (bucketName) => {
     setActiveBucket(bucketName);
+    setUploadTargetBucket(bucketName);
     try {
       localStorage.setItem(ACTIVE_BUCKET_KEY, bucketName);
     } catch (e) {
       console.error(e);
     }
+  };
+
+  // Transición desde Hub al Chat
+  const handleSelectBucketAndOpenChat = (bucketName) => {
+    handleSelectBucket(bucketName);
+    setCurrentView('chat');
+  };
+
+  // Volver desde Chat al Hub
+  const handleBackToHub = () => {
+    setCurrentView('hub');
+  };
+
+  // Abrir modal de upload para un bucket específico desde el Hub
+  const handleOpenUploadForBucket = (bucketName) => {
+    setUploadTargetBucket(bucketName);
+    setIsUploadModalOpen(true);
   };
 
   const handleSendMessage = async (queryText) => {
@@ -147,35 +170,58 @@ export function App() {
 
   return (
     <div className="app-layout">
-      <Sidebar
-        conversations={conversations}
-        activeId={activeId}
-        onSelectConversation={selectConversation}
-        onCreateConversation={createConversation}
-        onDeleteConversation={deleteConversation}
-        onOpenUploadModal={() => setIsUploadModalOpen(true)}
-        buckets={buckets}
-        activeBucket={activeBucket}
-        onSelectBucket={handleSelectBucket}
-        onOpenBucketManager={() => setIsBucketManagerOpen(true)}
-      />
+      {currentView === 'hub' ? (
+        /* Vista 1: Selector / Hub de Buckets (como en la imagen de referencia) */
+        <BucketHubView
+          buckets={buckets}
+          activeBucket={activeBucket}
+          onSelectBucketAndChat={handleSelectBucketAndOpenChat}
+          onOpenUploadForBucket={handleOpenUploadForBucket}
+          onOpenBucketManager={() => setIsBucketManagerOpen(true)}
+        />
+      ) : (
+        /* Vista 2: Chat con Sidebar y ChatArea */
+        <>
+          <Sidebar
+            conversations={conversations}
+            activeId={activeId}
+            onSelectConversation={selectConversation}
+            onCreateConversation={createConversation}
+            onDeleteConversation={deleteConversation}
+            onOpenUploadModal={() => {
+              setUploadTargetBucket(activeBucket);
+              setIsUploadModalOpen(true);
+            }}
+            buckets={buckets}
+            activeBucket={activeBucket}
+            onSelectBucket={handleSelectBucket}
+            onOpenBucketManager={() => setIsBucketManagerOpen(true)}
+            onBackToHub={handleBackToHub}
+          />
 
-      <ChatArea
-        conversation={activeConversation}
-        onSendMessage={handleSendMessage}
-        isLoading={isLoading}
-        onOpenUploadModal={() => setIsUploadModalOpen(true)}
-        activeBucket={activeBucket}
-        buckets={buckets}
-        onOpenBucketManager={() => setIsBucketManagerOpen(true)}
-      />
+          <ChatArea
+            conversation={activeConversation}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            onOpenUploadModal={() => {
+              setUploadTargetBucket(activeBucket);
+              setIsUploadModalOpen(true);
+            }}
+            activeBucket={activeBucket}
+            buckets={buckets}
+            onOpenBucketManager={() => setIsBucketManagerOpen(true)}
+            onBackToHub={handleBackToHub}
+          />
+        </>
+      )}
 
+      {/* Modales Compartidos */}
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onUploadSuccess={handleUploadSuccess}
         buckets={buckets}
-        activeBucket={activeBucket}
+        activeBucket={uploadTargetBucket || activeBucket}
         onOpenBucketManager={() => setIsBucketManagerOpen(true)}
       />
 
@@ -184,7 +230,10 @@ export function App() {
         onClose={() => setIsBucketManagerOpen(false)}
         buckets={buckets}
         activeBucket={activeBucket}
-        onSelectActiveBucket={handleSelectBucket}
+        onSelectActiveBucket={(b) => {
+          handleSelectBucket(b);
+          setUploadTargetBucket(b);
+        }}
         onBucketsChanged={loadBuckets}
       />
     </div>

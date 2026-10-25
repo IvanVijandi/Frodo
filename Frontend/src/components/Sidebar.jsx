@@ -9,7 +9,8 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Database
+  Database,
+  ArrowLeft
 } from 'lucide-react';
 import { MariaVectorLogo } from './MariaVectorLogo';
 
@@ -24,17 +25,35 @@ export function Sidebar({
   activeBucket = 'general',
   onSelectBucket,
   onOpenBucketManager,
+  onBackToHub,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <aside className="maria-sidebar">
-      {/* Header: Solo MARIA sin leyendas */}
+      {/* Header: Solo MARIA sin leyendas + botón para volver a los buckets */}
       <div className="maria-sidebar-header">
-        <div className="maria-brand">
+        <div
+          className="maria-brand"
+          onClick={onBackToHub}
+          style={{ cursor: onBackToHub ? 'pointer' : 'default' }}
+          title={onBackToHub ? "Volver a la selección de buckets" : undefined}
+        >
           <MariaVectorLogo size={22} />
           <span className="maria-brand-title">MARIA</span>
         </div>
+
+        {onBackToHub && (
+          <button
+            type="button"
+            className="maria-sidebar-back-hub-pill"
+            onClick={onBackToHub}
+            title="Ver todos los espacios"
+          >
+            <ArrowLeft size={12} />
+            <span>Espacios</span>
+          </button>
+        )}
       </div>
 
       {/* Botón "+ Nuevo chat" */}

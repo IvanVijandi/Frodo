@@ -6,8 +6,8 @@ import {
   Search,
   BookOpen,
   FileText,
-  UploadCloud,
-  ChevronDown
+  ChevronDown,
+  ArrowLeft
 } from 'lucide-react';
 import { MessageItem } from './MessageItem';
 import { MariaVectorLogo } from './MariaVectorLogo';
@@ -20,6 +20,7 @@ export function ChatArea({
   activeBucket = 'general',
   buckets = [],
   onOpenBucketManager,
+  onBackToHub,
 }) {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef(null);
@@ -67,10 +68,27 @@ export function ChatArea({
 
   return (
     <main className="maria-main">
-      {/* Header Limpio */}
+      {/* Header Limpio con botón para volver a los buckets */}
       <header className="maria-header">
         <div className="maria-header-left">
-          <div className="maria-header-brand">
+          {onBackToHub && (
+            <button
+              className="maria-header-back-btn"
+              onClick={onBackToHub}
+              title="Volver a la selección de buckets"
+              type="button"
+            >
+              <ArrowLeft size={15} />
+              <span>Mis buckets</span>
+            </button>
+          )}
+
+          <div
+            className="maria-header-brand"
+            onClick={onBackToHub}
+            style={{ cursor: onBackToHub ? 'pointer' : 'default' }}
+            title={onBackToHub ? "Ir a la vista de buckets" : undefined}
+          >
             <MariaVectorLogo size={20} />
             <span className="maria-header-title">MARIA</span>
           </div>
