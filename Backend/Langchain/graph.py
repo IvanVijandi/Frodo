@@ -41,13 +41,15 @@ class EvaluatorGraph:
             self.generator_llm = ChatOllama(
                 base_url=conf.OLLAMA_URI,
                 model=conf.LLM_MODEL,
-                temperature=0.2
+                temperature=0.2,
+                reasoning=False
             )
             # Evaluador: Ollama
             self.evaluator_llm = ChatOllama(
                 base_url=conf.OLLAMA_URI,
                 model=evaluator_model,
-                temperature=0.0
+                temperature=0.0,
+                reasoning=False
             ).with_structured_output(Feedback)
         elif provider == "google":
             evaluator_model = conf.EVALUATOR_MODEL or "gemini-2.5-flash"
