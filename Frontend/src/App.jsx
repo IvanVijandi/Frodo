@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 import { BucketHubView } from './components/BucketHubView';
+import { BucketDetailsView } from './components/BucketDetailsView';
 import { UploadModal } from './components/UploadModal';
 import { BucketManagerModal } from './components/BucketManagerModal';
 import { useChatStorage } from './hooks/useChatStorage';
@@ -34,9 +35,10 @@ export function App() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isBucketManagerOpen, setIsBucketManagerOpen] = useState(false);
 
-  // Vista actual: 'hub' (selector inicial de bucket) | 'chat'
+  // Vista actual: 'hub' (selector inicial de bucket) | 'chat' | 'manage'
   const [currentView, setCurrentView] = useState('hub');
   const [uploadTargetBucket, setUploadTargetBucket] = useState('general');
+  const [managedBucket, setManagedBucket] = useState(null);
 
   // Estado de Buckets
   const [buckets, setBuckets] = useState([
@@ -84,6 +86,13 @@ export function App() {
   // Volver desde Chat al Hub
   const handleBackToHub = () => {
     setCurrentView('hub');
+  };
+
+  // Abrir vista particular de administración del bucket
+  const handleManageBucket = (bucketName) => {
+    setManagedBucket(bucketName);
+    setUploadTargetBucket(bucketName);
+    setCurrentView('manage');
   };
 
   // Abrir modal de upload para un bucket específico desde el Hub
@@ -182,16 +191,27 @@ export function App() {
   return (
     <div className="app-layout">
       {currentView === 'hub' ? (
-        /* Vista 1: Selector / Hub de Buckets (como en la imagen de referencia) */
+        /* Vista 1: Selector / Hub de Buckets */
         <BucketHubView
           buckets={buckets}
           activeBucket={activeBucket}
           onSelectBucketAndChat={handleSelectBucketAndOpenChat}
           onOpenUploadForBucket={handleOpenUploadForBucket}
           onOpenBucketManager={() => setIsBucketManagerOpen(true)}
+          onManageBucket={handleManageBucket}
+        />
+      ) : currentView === 'manage' ? (
+        /* Vista 2: Vista particular de administración de bucket y documentos */
+        <BucketDetailsView
+          bucketName={managedBucket || activeBucket}
+          bucketInfo={buckets.find((b) => b.name === (managedBucket || activeBucket))}
+          onBackToHub={handleBackToHub}
+          onOpenChat={(bName) => handleSelectBucketAndOpenChat(bName)}
+          onOpenUpload={(bName) => handleOpenUploadForBucket(bName)}
+          onBucketDeleted={() => loadBuckets()}
         />
       ) : (
-        /* Vista 2: Chat con Sidebar y ChatArea */
+        /* Vista 3: Chat con Sidebar y ChatArea */
         <>
           <Sidebar
             conversations={conversations}
@@ -199,14 +219,7 @@ export function App() {
             onSelectConversation={selectConversation}
             onCreateConversation={createConversation}
             onDeleteConversation={deleteConversation}
-            onOpenUploadModal={() => {
-              setUploadTargetBucket(activeBucket);
-              setIsUploadModalOpen(true);
-            }}
-            buckets={buckets}
             activeBucket={activeBucket}
-            onSelectBucket={handleSelectBucket}
-            onOpenBucketManager={() => setIsBucketManagerOpen(true)}
             onBackToHub={handleBackToHub}
           />
 

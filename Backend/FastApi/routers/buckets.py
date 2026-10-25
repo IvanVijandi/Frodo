@@ -5,6 +5,7 @@ from ..dependencies import (
     get_list_buckets_use_case,
     get_get_bucket_use_case,
     get_delete_bucket_use_case,
+    get_milvus_client,
 )
 from ..use_cases.buckets import (
     CreateBucketUseCase,
@@ -89,5 +90,49 @@ async def delete_bucket(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al eliminar el bucket: {e}"
+        )
+
+@router.get(
+    "/buckets/{bucket_name}/documents",
+    summary="Listar documentos indexados en un bucket",
+    description="Devuelve todos los archivos PDF indexados en la colección vectorial del bucket con su conteo de fragmentos."
+)
+async def list_bucket_documents(
+    bucket_name: str,
+    milvus_client = Depends(get_milvus_client),
+):
+    try:
+        documents = await milvus_client.list_documents(bucket_name)
+        return {"bucket": bucket_name, "documents": documents}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al listar documentos del bucket: {e}"
+        )
+
+@router.delete(
+    "/buckets/{bucket_name}/documents/{filename}",
+    summary="Eliminar un documento del bucket",
+    description="Elimina todos los fragmentos vectoriales asociados a un archivo dentro del bucket especificado."
+)
+async def delete_bucket_document(
+    bucket_name: str,
+    filename: str,
+    milvus_client = Depends(get_milvus_client),
+):
+    try:
+        success = await milvus_client.delete_document(bucket_name, filename)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No se encontró el documento '{filename}' en el bucket '{bucket_name}'."
+            )
+        return {"message": f"Documento '{filename}' eliminado exitosamente del bucket '{bucket_name}'."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al eliminar documento del bucket: {e}"
         )
 

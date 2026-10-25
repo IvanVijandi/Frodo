@@ -278,3 +278,45 @@ class Async_Milvus_Client:
             data=data
         )
         return insert_results
+
+    async def list_documents(self, name: str) -> list[dict]:
+        """Obtiene la lista de documentos agrupados por archivo fuente en este bucket."""
+        clean_name = normalize_bucket_name(name)
+        if not await self.bucket_exists(clean_name):
+            return []
+        try:
+            results = await self.client.query(
+                collection_name=clean_name,
+                filter="id >= 0",
+                output_fields=["id", "source_file", "content_type", "metadata"],
+                limit=16384
+            )
+            docs_map = {}
+            for r in results:
+                sf = r.get("source_file") or "desconocido"
+                if sf not in docs_map:
+                    docs_map[sf] = {
+                        "filename": sf,
+                        "chunks_count": 0,
+                        "content_type": r.get("content_type", "general"),
+                    }
+                docs_map[sf]["chunks_count"] += 1
+            return list(docs_map.values())
+        except Exception as e:
+            print(f"Nota al listar documentos de {clean_name}: {e}")
+            return []
+
+    async def delete_document(self, name: str, filename: str) -> bool:
+        """Elimina todos los fragmentos asociados a un archivo dentro del bucket especificado."""
+        clean_name = normalize_bucket_name(name)
+        if not await self.bucket_exists(clean_name):
+            return False
+        try:
+            await self.client.delete(
+                collection_name=clean_name,
+                filter=f'source_file == "{filename}"'
+            )
+            return True
+        except Exception as e:
+            print(f"Error al eliminar documento {filename} de {clean_name}: {e}")
+            return False

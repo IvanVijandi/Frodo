@@ -65,6 +65,37 @@ export const api = {
   },
 
   /**
+   * Obtiene la lista de documentos (archivos fuentes) indexados en un bucket
+   * @param {string} bucketName
+   * @returns {Promise<{bucket: string, documents: Array<{filename: string, chunks_count: number, content_type: string}>}>}
+   */
+  async listBucketDocuments(bucketName) {
+    const response = await fetch(`${API_PREFIX}/buckets/${encodeURIComponent(bucketName)}/documents`);
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.detail || 'Error al obtener documentos del bucket');
+    }
+    return data?.documents || [];
+  },
+
+  /**
+   * Elimina un archivo documental de un bucket específico
+   * @param {string} bucketName
+   * @param {string} filename
+   */
+  async deleteBucketDocument(bucketName, filename) {
+    const response = await fetch(
+      `${API_PREFIX}/buckets/${encodeURIComponent(bucketName)}/documents/${encodeURIComponent(filename)}`,
+      { method: 'DELETE' }
+    );
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.detail || 'Error al eliminar documento del bucket');
+    }
+    return data;
+  },
+
+  /**
    * Sube un archivo PDF al backend asignándolo a un bucket específico
    * @param {File} file Archivo PDF
    * @param {string} bucketName Nombre del bucket (por defecto 'general')

@@ -1,37 +1,25 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Plus,
   MessageSquare,
   Trash2,
-  FileUp,
-  FolderKanban,
-  Settings2,
-  Check,
-  ChevronDown,
-  ChevronUp,
   Database,
   ArrowLeft
 } from 'lucide-react';
 import { MariaVectorLogo } from './MariaVectorLogo';
 
 export function Sidebar({
-  conversations,
+  conversations = [],
   activeId,
   onSelectConversation,
   onCreateConversation,
   onDeleteConversation,
-  onOpenUploadModal,
-  buckets = [],
   activeBucket = 'general',
-  onSelectBucket,
-  onOpenBucketManager,
   onBackToHub,
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   return (
     <aside className="maria-sidebar">
-      {/* Header: Solo MARIA sin leyendas + botón para volver a los buckets */}
+      {/* Header: Logo MARIA + botón para volver a los buckets */}
       <div className="maria-sidebar-header">
         <div
           className="maria-brand"
@@ -56,6 +44,27 @@ export function Sidebar({
         )}
       </div>
 
+      {/* Indicador sutil del bucket activo actual */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '6px 10px',
+          margin: '0 4px 10px 4px',
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: '8px',
+          fontSize: '0.82rem',
+          color: 'var(--text-sub)',
+        }}
+        title={`Espacio actual: ${activeBucket}`}
+      >
+        <Database size={13} className="text-emerald" />
+        <span style={{ color: 'var(--text-muted)' }}>Espacio:</span>
+        <strong style={{ color: 'var(--text-main)', fontWeight: 600 }}>{activeBucket}</strong>
+      </div>
+
       {/* Botón "+ Nuevo chat" */}
       <div className="maria-sidebar-action">
         <button
@@ -68,86 +77,12 @@ export function Sidebar({
         </button>
       </div>
 
-      {/* Sección Limpia de Buckets con Botón de Despliegue */}
-      <div className="maria-buckets-panel">
-        <div className="maria-buckets-header">
-          <div className="maria-buckets-title">
-            <Database size={15} className="text-emerald" />
-            <span>Buckets</span>
-          </div>
-
-          <div className="maria-buckets-controls">
-            <button
-              type="button"
-              className="maria-btn-toggle"
-              onClick={() => setIsExpanded(!isExpanded)}
-              title={isExpanded ? "Plegar sección" : "Desplegar buckets"}
-            >
-              <span>{isExpanded ? "Plegar" : "Ver info"}</span>
-              {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-            </button>
-
-            <button
-              type="button"
-              className="maria-icon-btn-ghost"
-              onClick={onOpenBucketManager}
-              title="Administrar buckets"
-            >
-              <Settings2 size={14} />
-            </button>
-          </div>
-        </div>
-
-        {/* Bucket Activo (siempre visible, limpio) */}
-        <div
-          className="maria-active-bucket-row"
-          onClick={() => setIsExpanded(!isExpanded)}
-          title="Bucket activo actualmente"
-        >
-          <span className="maria-status-dot-emerald"></span>
-          <span className="maria-active-bucket-name">{activeBucket}</span>
-          <span className="maria-active-tag">Activo</span>
-        </div>
-
-        {/* Lista Desplegable Simple y Limpia */}
-        {isExpanded && (
-          <div className="maria-buckets-dropdown">
-            <div className="maria-buckets-list">
-              {buckets.map((b) => {
-                const isActive = b.name === activeBucket;
-                return (
-                  <div
-                    key={b.name}
-                    className={`maria-bucket-item ${isActive ? 'is-active' : ''}`}
-                    onClick={() => onSelectBucket && onSelectBucket(b.name)}
-                    title={`Seleccionar bucket ${b.name}`}
-                  >
-                    <FolderKanban size={14} className={isActive ? 'text-emerald' : 'text-muted'} />
-                    <span className="maria-bucket-name">{b.name}</span>
-                    {isActive && <Check size={13} className="text-emerald maria-bucket-check" />}
-                  </div>
-                );
-              })}
-            </div>
-
-            <button
-              type="button"
-              className="maria-manage-buckets-link"
-              onClick={onOpenBucketManager}
-            >
-              <Settings2 size={13} />
-              <span>Administrar buckets</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Historial de Chats Recientes */}
-      <div className="maria-history-section">
+      {/* Historial de Chats Recientes en este bucket */}
+      <div className="maria-history-section" style={{ flex: 1 }}>
         <span className="maria-history-heading">Recientes</span>
         <div className="maria-history-list">
           {conversations.length === 0 ? (
-            <p className="maria-empty-text">Sin conversaciones recientes</p>
+            <p className="maria-empty-text">Sin conversaciones recientes en este espacio</p>
           ) : (
             conversations.map((conv) => {
               const isActive = conv.id === activeId;
@@ -177,18 +112,6 @@ export function Sidebar({
             })
           )}
         </div>
-      </div>
-
-      {/* Footer Limpio */}
-      <div className="maria-sidebar-footer">
-        <button
-          className="maria-upload-btn"
-          onClick={onOpenUploadModal}
-          type="button"
-        >
-          <FileUp size={15} className="text-emerald" />
-          <span>Cargar PDF</span>
-        </button>
       </div>
     </aside>
   );

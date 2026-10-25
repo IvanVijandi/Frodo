@@ -8,7 +8,9 @@ import {
   Upload,
   ShieldCheck,
   Plus,
-  Coins
+  Coins,
+  Settings2,
+  MessageSquare,
 } from 'lucide-react';
 import { MariaVectorLogo } from './MariaVectorLogo';
 
@@ -18,6 +20,7 @@ export function BucketHubView({
   onSelectBucketAndChat,
   onOpenUploadForBucket,
   onOpenBucketManager,
+  onManageBucket,
 }) {
   // Función para elegir icono adecuado según nombre o tipo
   const getBucketIcon = (bucket) => {
@@ -96,11 +99,6 @@ export function BucketHubView({
             <MariaVectorLogo size={24} />
             <span className="hub-brand-name">MARIA</span>
           </div>
-
-          <div className="hub-badge-personal">
-            <span className="hub-dot-emerald"></span>
-            <span>ESPACIO PERSONAL</span>
-          </div>
         </div>
       </header>
 
@@ -109,10 +107,6 @@ export function BucketHubView({
         {/* Hero Section */}
         <div className="hub-hero-section">
           <div className="hub-hero-left">
-            <div className="hub-tag-knowledge">
-              <span className="hub-dot-emerald"></span>
-              <span>TU ESPACIO DE CONOCIMIENTO</span>
-            </div>
             <h1 className="hub-hero-title">
               ¿Qué quieres <span className="hub-title-highlight">consultar</span> hoy?
             </h1>
@@ -196,7 +190,34 @@ export function BucketHubView({
                   <span className="hub-card-time">{formatRelativeTime(b.created_at)}</span>
                 </div>
 
-                <div className="hub-card-actions">
+                <div className="hub-card-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="hub-btn-new-space"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onManageBucket && onManageBucket(b.name);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '0.6rem 0.5rem',
+                      fontSize: '0.85rem',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      color: 'var(--text-main)',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                    title={`Administrar documentos y configuración de ${b.name}`}
+                  >
+                    <Settings2 size={15} />
+                    <span>Administrar</span>
+                  </button>
+
                   <button
                     type="button"
                     className="hub-btn-open-chat"
@@ -204,21 +225,22 @@ export function BucketHubView({
                       e.stopPropagation();
                       onSelectBucketAndChat(b.name);
                     }}
-                  >
-                    <span>Abrir chat</span>
-                    <ArrowUpRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="hub-btn-upload-direct"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenUploadForBucket(b.name);
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '0.6rem 0.5rem',
+                      fontSize: '0.85rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
                     }}
-                    title={`Subir PDF al bucket '${b.name}'`}
+                    title={`Abrir chat en el bucket ${b.name}`}
                   >
-                    <Upload size={16} />
+                    <MessageSquare size={15} />
+                    <span>Abrir chat</span>
+                    <ArrowUpRight size={14} />
                   </button>
                 </div>
               </div>
