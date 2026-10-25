@@ -1,13 +1,16 @@
 import json
+import uuid
 from typing import Dict, Any, Optional, AsyncGenerator
 
 try:
     from Langchain.graph import EvaluatorGraph
+    from config import conf
 except ModuleNotFoundError:
     from Backend.Langchain.graph import EvaluatorGraph
+    from Backend.config import conf
 
 class GenerateResponseUseCase:
-    """Caso de uso para generar respuestas RAG contextualizadas, evaluadas y con soporte de streaming SSE."""
+    """Caso de uso para generar respuestas RAG contextualizadas, evaluadas y con persistencia en PostgreSQL."""
 
     def __init__(self, milvus_client, embedding_generator, reranker: Optional[Any] = None):
         self.milvus_client = milvus_client
@@ -21,12 +24,49 @@ class GenerateResponseUseCase:
             reranker=self.reranker
         )
 
-    async def execute_stream(self, query: str, bucket_name: str = "general") -> AsyncGenerator[str, None]:
+    async def execute_stream(
+        self,
+        query: str,
+        bucket_name: str = "general",
+        conversacion_id: Optional[str] = None,
+        db: Optional[Any] = None
+    ) -> AsyncGenerator[str, None]:
         target_bucket = bucket_name.strip() if bucket_name else "general"
 
         if not await self.milvus_client.bucket_exists(target_bucket):
             yield f"data: {json.dumps({'error': f'El bucket {target_bucket} no existe.', 'done': True})}\n\n"
             return
+
+        # 0. Gestionar o recuperar conversación y persistir mensaje del usuario en PostgreSQL
+        target_conv = None
+        if db:
+            try:
+                from Postgres import repository
+                pg_bucket = await repository.get_or_create_bucket(db, target_bucket)
+
+                if conversacion_id:
+                    try:
+                        c_uuid = uuid.UUID(str(conversacion_id))
+                        target_conv = await repository.get_conversacion(db, c_uuid, include_mensajes=False)
+                    except (ValueError, TypeError):
+                        pass
+
+                if not target_conv:
+                    title = query[:40].strip() + ("..." if len(query) > 40 else "")
+                    target_conv = await repository.create_conversacion(
+                        db=db,
+                        bucket_id=pg_bucket.id,
+                        title=title or "Nueva conversación"
+                    )
+
+                await repository.add_mensaje(
+                    db=db,
+                    conversacion_id=target_conv.id,
+                    role="user",
+                    content=query
+                )
+            except Exception as e:
+                print(f"Nota al registrar mensaje de usuario en PostgreSQL: {e}")
 
         evaluator_graph = self._create_evaluator_graph()
 
@@ -45,20 +85,35 @@ class GenerateResponseUseCase:
                 final_results = hits
 
             context_chunks = []
+            clean_sources = []
             for hit in final_results:
                 text = ""
+                src_file = "desconocido"
+                score_val = None
+
                 if isinstance(hit, dict):
                     entity = hit.get('entity', {})
                     if isinstance(entity, dict):
                         text = entity.get('text') or entity.get('text_chunk') or ""
+                        src_file = entity.get('source_file', src_file)
                     text = text or hit.get('text') or hit.get('text_chunk') or ""
+                    src_file = hit.get('source_file') or src_file
+                    score_val = hit.get('distance') or hit.get('score')
                 else:
                     entity = getattr(hit, 'entity', None)
                     if entity:
                         text = getattr(entity, 'text', '') or getattr(entity, 'text_chunk', '')
+                        src_file = getattr(entity, 'source_file', src_file)
                     text = text or getattr(hit, 'text', '') or getattr(hit, 'text_chunk', '')
+                    src_file = getattr(hit, 'source_file', src_file)
+                    score_val = getattr(hit, 'distance', None) or getattr(hit, 'score', None)
+
                 if text:
                     context_chunks.append(text)
+                    clean_sources.append({
+                        "source": src_file,
+                        "score": round(float(score_val), 4) if score_val is not None else None
+                    })
 
             context = "\n\n".join(context_chunks)
 
@@ -88,17 +143,68 @@ CONTEXTO:
                     accumulated += content
                     yield f"data: {json.dumps({'token': content, 'done': False})}\n\n"
 
-            # 4. Finalizar stream con evento final
-            yield f"data: {json.dumps({'token': '', 'done': True, 'response': accumulated, 'bucket': target_bucket})}\n\n"
+            # 4. Persistir respuesta del asistente en PostgreSQL
+            if db and target_conv:
+                try:
+                    from Postgres import repository
+                    await repository.add_mensaje(
+                        db=db,
+                        conversacion_id=target_conv.id,
+                        role="assistant",
+                        content=accumulated,
+                        sources=clean_sources[:5],
+                        extra_metadata={"model": getattr(conf, "LLM_MODEL", "qwen3.5:4b")}
+                    )
+                except Exception as e:
+                    print(f"Nota al registrar mensaje de asistente en PostgreSQL: {e}")
+
+            # 5. Finalizar stream con evento final
+            yield f"data: {json.dumps({'token': '', 'done': True, 'response': accumulated, 'bucket': target_bucket, 'conversacion_id': str(target_conv.id) if target_conv else None})}\n\n"
 
         except Exception as stream_err:
             yield f"data: {json.dumps({'error': str(stream_err), 'done': True})}\n\n"
 
-    async def execute_evaluated(self, query: str, bucket_name: str = "general") -> Dict[str, Any]:
+    async def execute_evaluated(
+        self,
+        query: str,
+        bucket_name: str = "general",
+        conversacion_id: Optional[str] = None,
+        db: Optional[Any] = None
+    ) -> Dict[str, Any]:
         target_bucket = bucket_name.strip() if bucket_name else "general"
 
         if not await self.milvus_client.bucket_exists(target_bucket):
             raise KeyError(f"El bucket '{target_bucket}' no existe.")
+
+        target_conv = None
+        if db:
+            try:
+                from Postgres import repository
+                pg_bucket = await repository.get_or_create_bucket(db, target_bucket)
+
+                if conversacion_id:
+                    try:
+                        c_uuid = uuid.UUID(str(conversacion_id))
+                        target_conv = await repository.get_conversacion(db, c_uuid, include_mensajes=False)
+                    except (ValueError, TypeError):
+                        pass
+
+                if not target_conv:
+                    title = query[:40].strip() + ("..." if len(query) > 40 else "")
+                    target_conv = await repository.create_conversacion(
+                        db=db,
+                        bucket_id=pg_bucket.id,
+                        title=title or "Nueva conversación"
+                    )
+
+                await repository.add_mensaje(
+                    db=db,
+                    conversacion_id=target_conv.id,
+                    role="user",
+                    content=query
+                )
+            except Exception as e:
+                print(f"Nota al registrar mensaje de usuario en PostgreSQL: {e}")
 
         evaluator_graph = self._create_evaluator_graph()
 
@@ -114,10 +220,28 @@ CONTEXTO:
 
         final_state = await evaluator_graph.graph.ainvoke(initial_state)
 
+        if db and target_conv:
+            try:
+                from Postgres import repository
+                await repository.add_mensaje(
+                    db=db,
+                    conversacion_id=target_conv.id,
+                    role="assistant",
+                    content=final_state["response"],
+                    sources=[],
+                    extra_metadata={
+                        "model": getattr(conf, "LLM_MODEL", "qwen3.5:4b"),
+                        "eval_status": final_state.get("eval_status"),
+                        "iteration": final_state.get("iteration", 0)
+                    }
+                )
+            except Exception as e:
+                print(f"Nota al registrar mensaje evaluado en PostgreSQL: {e}")
+
         return {
             "message": "Respuesta evaluada y aprobada por el juez." if final_state["eval_status"] == "accepted" else "Límite de iteraciones alcanzado o sin contexto suficiente.",
             "bucket": target_bucket,
             "response": final_state["response"],
-            "iteration": final_state.get("iteration", 0)
+            "iteration": final_state.get("iteration", 0),
+            "conversacion_id": str(target_conv.id) if target_conv else None
         }
-

@@ -25,6 +25,7 @@ export function App() {
     createConversation,
     selectConversation,
     deleteConversation,
+    updateConversationId,
     addMessage,
     updateMessage,
   } = useChatStorage(activeBucket);
@@ -108,25 +109,35 @@ export function App() {
     let assistantMsgId = null;
 
     try {
-      // 2. Invocar backend FastAPI con streaming en vivo
+      // 2. Invocar backend FastAPI con streaming en vivo persistiendo en PostgreSQL
       let accumulatedText = '';
-      const result = await api.sendMessage(queryText, bucketToUse, (token, currentFull) => {
-        accumulatedText = currentFull;
-        if (!assistantMsgId) {
-          setIsLoading(false); // Ocultar shimmer cuando empieza a escribir
-          const newMsg = addMessage(currentConvId, {
-            role: 'assistant',
-            text: currentFull,
-            isStreaming: true,
-          });
-          assistantMsgId = newMsg.id;
-        } else {
-          updateMessage(currentConvId, assistantMsgId, {
-            text: currentFull,
-            isStreaming: true,
-          });
-        }
-      });
+      const result = await api.sendMessage(
+        queryText,
+        bucketToUse,
+        (token, currentFull) => {
+          accumulatedText = currentFull;
+          if (!assistantMsgId) {
+            setIsLoading(false); // Ocultar shimmer cuando empieza a escribir
+            const newMsg = addMessage(currentConvId, {
+              role: 'assistant',
+              text: currentFull,
+              isStreaming: true,
+            });
+            assistantMsgId = newMsg.id;
+          } else {
+            updateMessage(currentConvId, assistantMsgId, {
+              text: currentFull,
+              isStreaming: true,
+            });
+          }
+        },
+        currentConvId
+      );
+
+      // Si el backend retornó un UUID de PostgreSQL, sincronizarlo en el estado local
+      if (result?.conversacion_id && result.conversacion_id !== currentConvId) {
+        updateConversationId(currentConvId, result.conversacion_id);
+      }
 
       // 3. Finalizar respuesta del asistente
       if (assistantMsgId) {

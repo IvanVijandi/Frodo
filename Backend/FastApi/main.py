@@ -31,12 +31,17 @@ from .routers import (
     buckets_router,
     ingestion_router,
     rag_router,
+    conversaciones_router,
 )
 
 tags_metadata = [
     {
         "name": "Buckets",
         "description": "Operaciones para crear, listar, inspeccionar y eliminar colecciones vectoriales temáticas en Milvus.",
+    },
+    {
+        "name": "Conversaciones & Mensajes",
+        "description": "Persistencia de sesiones de chat, hilos temáticos e historial de mensajes en PostgreSQL.",
     },
     {
         "name": "Ingesta",
@@ -103,3 +108,4 @@ app.include_router(system_router)
 app.include_router(buckets_router)
 app.include_router(ingestion_router)
 app.include_router(rag_router)
+app.include_router(conversaciones_router)

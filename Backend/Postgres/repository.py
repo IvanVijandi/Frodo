@@ -44,6 +44,25 @@ async def create_bucket(
     await db.flush()
     return bucket
 
+async def get_or_create_bucket(
+    db: AsyncSession,
+    name: str,
+    content_type: str = "general",
+    description: Optional[str] = "",
+    extra_metadata: Optional[Dict[str, Any]] = None,
+) -> Bucket:
+    """Obtiene un bucket existente o lo crea si aún no está registrado en PostgreSQL."""
+    bucket = await get_bucket_by_name(db, name)
+    if not bucket:
+        bucket = await create_bucket(
+            db=db,
+            name=name,
+            content_type=content_type or "general",
+            description=description or "",
+            extra_metadata=extra_metadata or {},
+        )
+    return bucket
+
 async def delete_bucket_by_name(db: AsyncSession, name: str) -> bool:
     """Elimina un bucket por su nombre (borra en cascada sus conversaciones y mensajes)."""
     bucket = await get_bucket_by_name(db, name)

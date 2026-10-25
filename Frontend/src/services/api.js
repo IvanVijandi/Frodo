@@ -99,15 +99,83 @@ export const api = {
   },
 
   /**
-   * Envía una consulta al grafo RAG indicando el bucket de búsqueda y recibiendo streaming en tiempo real
+   * Crea una nueva conversación en PostgreSQL para un bucket
+   */
+  async createConversation(bucketName, title = 'Nueva conversación', extraMetadata = {}) {
+    const response = await fetch(`${API_PREFIX}/conversaciones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bucket_name: bucketName || 'general',
+        title: title || 'Nueva conversación',
+        extra_metadata: extraMetadata,
+      }),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.detail || 'Error al crear conversación');
+    }
+    return data;
+  },
+
+  /**
+   * Obtiene la lista de conversaciones de un bucket desde PostgreSQL
+   */
+  async listConversations(bucketName) {
+    const response = await fetch(`${API_PREFIX}/buckets/${encodeURIComponent(bucketName || 'general')}/conversaciones`);
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.detail || 'Error al listar conversaciones');
+    }
+    return Array.isArray(data) ? data : [];
+  },
+
+  /**
+   * Obtiene una conversación completa con sus mensajes desde PostgreSQL
+   */
+  async getConversation(conversationId) {
+    const response = await fetch(`${API_PREFIX}/conversaciones/${encodeURIComponent(conversationId)}`);
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.detail || 'Error al obtener conversación');
+    }
+    return data;
+  },
+
+  /**
+   * Elimina una conversación de PostgreSQL (cascada a sus mensajes)
+   */
+  async deleteConversation(conversationId) {
+    const response = await fetch(`${API_PREFIX}/conversaciones/${encodeURIComponent(conversationId)}`, {
+      method: 'DELETE',
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.detail || 'Error al eliminar conversación');
+    }
+    return data;
+  },
+
+  /**
+   * Envía una consulta al grafo RAG indicando el bucket y persistiendo en la conversación de PostgreSQL
    * @param {string} query Pregunta del usuario
    * @param {string} [bucketName='general'] Bucket donde buscar
    * @param {function(string, string): void} [onChunk] Callback llamado por cada token recibido (token, fullTextAcumulado)
-   * @returns {Promise<{message?: string, bucket: string, response: string, iteration?: number}>}
+   * @param {string} [conversationId] UUID de la conversación en PostgreSQL
+   * @returns {Promise<{message?: string, bucket: string, response: string, iteration?: number, conversacion_id?: string}>}
    */
-  async sendMessage(query, bucketName = 'general', onChunk = null) {
+  async sendMessage(query, bucketName = 'general', onChunk = null, conversationId = null) {
     if (!query || !query.trim()) {
       throw new Error('La consulta no puede estar vacía');
+    }
+
+    const payload = {
+      query: query.trim(),
+      bucket_name: bucketName || 'general',
+      stream: true,
+    };
+    if (conversationId) {
+      payload.conversacion_id = conversationId;
     }
 
     const response = await fetch(`${API_PREFIX}/generarRespuesta`, {
@@ -116,11 +184,7 @@ export const api = {
         'Content-Type': 'application/json',
         'Accept': 'text/event-stream',
       },
-      body: JSON.stringify({
-        query: query.trim(),
-        bucket_name: bucketName || 'general',
-        stream: true,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -135,6 +199,7 @@ export const api = {
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
       let fullText = '';
+      let returnedConvId = conversationId;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -154,6 +219,9 @@ export const api = {
                 if (parsed.error) {
                   throw new Error(parsed.error);
                 }
+                if (parsed.conversacion_id) {
+                  returnedConvId = parsed.conversacion_id;
+                }
                 if (parsed.token) {
                   fullText += parsed.token;
                   if (onChunk) {
@@ -171,10 +239,11 @@ export const api = {
       return {
         response: fullText,
         bucket: bucketName || 'general',
+        conversacion_id: returnedConvId,
       };
     } else {
       const data = await response.json().catch(() => null);
-      return data || { response: '', bucket: bucketName };
+      return data || { response: '', bucket: bucketName, conversacion_id: conversationId };
     }
   },
 };
