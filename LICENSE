@@ -1,0 +1,28 @@
+Business Source License 1.1
+
+Parameters:
+
+Licensor:                 Ivan Andres Vijandi
+Licensed Work:            Frodo (including any source code, documentation, and assets provided under this license)
+Additional Use Grant:     You may use the Licensed Work free of charge for non-production environments, testing, development, and personal or educational purposes. Any use of the Licensed Work in production, or offering the Licensed Work (or modified versions of it) as a commercial product, paid service, or hosted SaaS to third parties, requires a separate commercial license from the Licensor.
+Change Date:              2030-10-25
+Change License:           Apache License, Version 2.0 (as published by the Apache Software Foundation)
+
+----------------------------------------------------------------------
+
+1. Grant of License.
+The Licensor hereby grants you the right to copy, modify, create derivative works, redistribute, and make non-production use of the Licensed Work. The Licensor also grants you the right to make Additional Use of the Licensed Work, as defined in the Parameters above.
+
+2. Conditions.
+You may exercise the rights granted in Section 1 above provided that you:
+(a) Include a copy of this License and the Licensor's copyright notice with all copies of the Licensed Work and derivative works; and
+(b) Do not make use of the Licensed Work or any derivative work in violation of the Additional Use Grant parameters above.
+
+3. Change to Open Source License.
+Effective on the Change Date, or the date of any earlier public announcement by the Licensor, the Licensor hereby grants you rights under the terms of the Change License specified above with respect to the Licensed Work (and any previous versions thereof), without the restrictions of this License.
+
+4. Trademarks.
+This License does not grant any rights to use the Licensor’s trademarks, trade names, logos, or service marks.
+
+5. Disclaimer of Warranties and Limitation of Liability.
+THE LICENSED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE LICENSED WORK OR THE USE OR OTHER DEALINGS IN THE LICENSED WORK.
