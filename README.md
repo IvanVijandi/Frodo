@@ -35,7 +35,7 @@ En el contexto de Frodo, un **Bucket** no es simplemente una carpeta de archivos
 | **Orquestación RAG** | **LangChain & LangGraph** | Pipeline de RAG agentico con grafo de estados cíclico (Retrieve $\rightarrow$ Generate $\rightarrow$ Evaluate $\rightarrow$ Optimize). |
 | **Modelos de IA (LLM)** | **Ollama** | Motor de inferencia local para ejecutar modelos de vanguardia (Llama 3, Mistral, Qwen, DeepSeek) sin conexión a internet. |
 | **Embeddings** | **Ollama Embeddings** | Generación de representaciones vectoriales locales (`nomic-embed-text`, etc.) con soporte configurable para Google Gemini. |
-| **Reranking** | **FlashRank / Cross-Encoder** | Re-ordenamiento semántico de alta precisión sobre los fragmentos devueltos por la base vectorial. |
+| **Reranking Local** | **Cross-Encoder (`mmarco-mMiniLMv2`)** | Re-ordenamiento semántico local ultraligero (< 500 MB) con soporte nativo en español y baja latencia (~30ms). |
 | **Base Vectorial** | **Milvus 2.4 Standalone** | Base de datos vectorial distribuida de alto rendimiento, asistida por **etcd** (metadatos) y **MinIO** (almacenamiento de objetos). |
 | **GUI Vectorial** | **Attu (Milvus GUI)** | Panel visual para inspeccionar colecciones, vectores, métricas y esquemas en el puerto `8001`. |
 | **Base de Datos Relacional** | **PostgreSQL 16 (Alpine)** | Persistencia de buckets, hilos de conversación y mensajes con UUIDs nativos y eliminación en cascada. Totalmente aislada en la red Docker interna. |
@@ -260,6 +260,11 @@ EMBEDDING_PROVIDER=ollama
 EMBEDDING_MODEL=nomic-embed-text:latest
 VECTOR_DIM=768
 OLLAMA_URI=http://host.docker.internal:11434
+
+# Reranker Local (< 500 MB)
+RERANKER_PROVIDER=local
+RERANKER_MODEL=cross-encoder/mmarco-mMiniLMv2-L12-H384-v1
+RERANKER_TOP_K=3
 
 # Milvus
 MILVUS_URI=http://standalone:19530

@@ -71,7 +71,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Advertencia durante init_postgres_db: {e}")
 
-    app.state.reranker = Reranker() if conf.RERANKER_PROVIDER.lower() != "none" else None
+    try:
+        app.state.reranker = Reranker() if conf.RERANKER_PROVIDER.lower() != "none" else None
+    except Exception as e:
+        print(f"Advertencia al inicializar el reranker: {e}")
+        app.state.reranker = None
     app.state.embedding_generator = EmbeddingGenerator()
     app.state.milvus_client = Async_Milvus_Client()
     yield

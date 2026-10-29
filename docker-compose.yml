@@ -104,6 +104,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./Backend:/app
+      - huggingface_cache:/root/.cache/huggingface
     expose:
       - "8000"
     env_file:
@@ -112,6 +113,10 @@ services:
       MILVUS_URI: http://standalone:19530
       OLLAMA_URI: ${OLLAMA_URI:-http://host.docker.internal:11434}
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://maria_user:maria_pass@postgres:5432/maria_db}
+      HF_HOME: /root/.cache/huggingface
+      RERANKER_PROVIDER: ${RERANKER_PROVIDER:-local}
+      RERANKER_MODEL: ${RERANKER_MODEL:-cross-encoder/mmarco-mMiniLMv2-L12-H384-v1}
+      RERANKER_TOP_K: ${RERANKER_TOP_K:-3}
     depends_on:
       standalone:
         condition: service_started
@@ -138,3 +143,4 @@ volumes:
   milvus_data:
   postgres_data:
   pgadmin_data:
+  huggingface_cache:

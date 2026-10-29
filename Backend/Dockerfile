@@ -19,9 +19,9 @@ ENV UV_PROJECT_ENVIRONMENT="/opt/venv"
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONPATH="/app"
 
-# Sincronizamos las dependencias usando el lockfile
+# Sincronizamos las dependencias usando uv
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
+    uv sync --no-install-project --no-dev
 
 # Copiamos toda la app en el directorio /app del contenedor
 COPY . /app
